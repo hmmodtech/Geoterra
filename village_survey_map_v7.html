@@ -1,0 +1,5004 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>أداة مسح القرية (حفظ تلقائي + شاشة كاملة + GPS) — Village Survey Pro v7</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg: #080f1d;
+    --panel: #101a2e;
+    --panel2: #0c1526;
+    --border: #1e3354;
+    --cyan: #38bdf8;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: monospace, Tahoma, Arial, sans-serif;
+    overflow: hidden;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .toolbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    z-index: 20;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+  }
+  button, label.file-btn {
+    padding: 6px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #16233d;
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  label.file-btn {
+    border-color: var(--cyan);
+    background: #0c2742;
+    color: #e0f2fe;
+    font-weight: bold;
+  }
+  input[type="file"] { display: none; }
+  .btn-primary { background: #0284c7; border-color: var(--cyan); color: #fff; font-weight: bold; }
+  .btn-green   { background: #15803d; border-color: var(--green); color: #fff; font-weight: bold; }
+  .btn-amber   { background: #92400e; border-color: var(--amber); color: #fff; font-weight: bold; }
+  .btn-purple  { background: #6b21a8; border-color: #c084fc; color: #fff; font-weight: bold; }
+  .btn-danger  { background: #7f1d1d; border-color: var(--red); color: #fff; }
+  .btn-lang    { background: #0f172a; border-color: var(--cyan); color: var(--cyan); font-weight: bold; }
+  .btn-active  { background: #0369a1; border-color: #7dd3fc; box-shadow: 0 0 0 1px #38bdf8 inset; color: #fff; font-weight: bold; }
+  .btn-active-green { background: #166534; border-color: #4ade80; box-shadow: 0 0 0 1px #22c55e inset; color: #fff; font-weight: bold; }
+  .btn-active-amber { background: #92400e; border-color: #fbbf24; box-shadow: 0 0 0 1px #f59e0b inset; color: #fff; font-weight: bold; }
+  .btn-active-purple { background: #581c87; border-color: #c084fc; box-shadow: 0 0 0 1px #a855f7 inset; color: #fff; font-weight: bold; }
+  .btn-gps-on  { background: #0c4a6e; border-color: #22d3ee; color: #67e8f9; box-shadow: 0 0 8px rgba(34,211,238,0.35); font-weight: bold; }
+
+  .badge {
+    background: #080f1d;
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    border-radius: 10px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 2px;
+  }
+
+  .drawer {
+    display: none;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 10px;
+    z-index: 19;
+    max-height: 52vh;
+    overflow-y: auto;
+  }
+  .drawer.open { display: block; }
+
+  .ctrl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    background: #080f1d;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .ctrl input[type="number"] {
+    width: 46px;
+    padding: 3px 4px;
+    background: #101a2e;
+    border: 1px solid var(--cyan);
+    border-radius: 4px;
+    color: #fff;
+    font-family: inherit;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  .section-box {
+    border: 1px solid var(--border);
+    background: rgba(16, 26, 46, 0.55);
+    border-radius: 8px;
+    padding: 7px 8px;
+    margin-bottom: 7px;
+  }
+  .section-box.gps-box {
+    border-color: #0369a1;
+    background: rgba(12, 74, 110, 0.18);
+  }
+  .section-box.ai-box {
+    border-color: #4c1d95;
+    background: rgba(88, 28, 135, 0.14);
+  }
+  .section-title {
+    font-size: 11.5px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .section-title.cyan { color: #7dd3fc; }
+  .section-title.purp { color: #d8b4fe; }
+
+  .status {
+    background: #0b1426;
+    border-bottom: 1px solid var(--border);
+    padding: 5px 10px;
+    font-size: 11.5px;
+    color: var(--cyan);
+    text-align: center;
+    line-height: 1.45;
+  }
+  .status .warn { color: var(--amber); }
+  .status .ok   { color: var(--green); }
+  .status .purp { color: #d8b4fe; }
+  .status .err  { color: #f87171; }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    background: #050a14;
+    touch-action: none;
+  }
+  #viewCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+  }
+
+  /* Zoom buttons */
+  .zoom-fab {
+    position: absolute;
+    left: 10px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 6;
+  }
+  .zoom-fab button {
+    width: 38px;
+    height: 38px;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    background: rgba(16, 26, 46, 0.92);
+    border-color: var(--cyan);
+    padding: 0;
+  }
+
+  /* Live Compass & GPS Floating HUD */
+  .nav-hud {
+    position: absolute;
+    right: 10px;
+    bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 6;
+    pointer-events: auto;
+  }
+  .compass-widget {
+    width: 78px;
+    background: rgba(8, 15, 29, 0.9);
+    border: 1.5px solid var(--cyan);
+    border-radius: 10px;
+    padding: 5px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+    user-select: none;
+  }
+  .compass-widget.inactive {
+    border-color: #334155;
+    opacity: 0.78;
+  }
+  .compass-svg {
+    width: 56px;
+    height: 56px;
+    display: block;
+    margin: 0 auto;
+  }
+  .compass-readout {
+    font-size: 10.5px;
+    font-weight: bold;
+    color: var(--cyan);
+    margin-top: 2px;
+    direction: ltr;
+  }
+  .gps-pill {
+    background: rgba(8, 15, 29, 0.92);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 4px 7px;
+    font-size: 10.5px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 155px;
+    line-height: 1.35;
+    direction: ltr;
+  }
+  .gps-pill.good { border-color: var(--green); color: #86efac; }
+  .gps-pill.warn { border-color: var(--amber); color: #fde68a; }
+  .gps-pill.err  { border-color: var(--red);   color: #fca5a5; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(8, 15, 29, 0.94);
+    border: 1px solid var(--cyan);
+    color: #e0f2fe;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    z-index: 30;
+    display: none;
+    max-width: 92%;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  }
+  .toast.show { display: block; }
+
+  /* Features list */
+  .feat-empty {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 10px 4px;
+  }
+  .feat-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    background: #101a2e;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 9px;
+    margin-bottom: 6px;
+    text-align: start;
+  }
+  .feat-info { flex: 1; min-width: 0; }
+  .feat-title {
+    font-size: 12.5px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+  }
+  .tag-REM { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid #ef4444; }
+  .tag-REP { background: rgba(168,85,247,0.22); color: #d8b4fe; border: 1px solid #a855f7; }
+  .tag-MOD { background: rgba(245,158,11,0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+  .tag-ADD { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid #22c55e; }
+  .tag-geom { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid #0284c7; }
+  .tag-photo { background: rgba(148,163,184,0.16); color: #cbd5e1; border: 1px solid #475569; }
+  .feat-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    word-break: break-word;
+    line-height: 1.45;
+  }
+  .feat-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .feat-thumb-img {
+    width: 46px;
+    height: 46px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid var(--cyan);
+    cursor: pointer;
+    background: #080f1d;
+  }
+  .feat-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .feat-actions button { padding: 5px 8px; font-size: 12px; }
+
+  /* Modals */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 15, 0.84);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    width: 100%;
+    max-width: 460px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border: 1px solid var(--cyan);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+  }
+  .modal h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: var(--cyan);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .field { margin-bottom: 10px; text-align: start; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .field input[type="text"], .field input[type="number"], .field textarea, .field select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #080f1d;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .field textarea { min-height: 52px; resize: vertical; }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .photo-row { display: flex; gap: 6px; align-items: stretch; }
+  .photo-row input[type="text"] { flex: 1; min-width: 0; }
+  .photo-pick-btn {
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--cyan);
+    background: #0c2742;
+    color: #e0f2fe;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .photo-hint { font-size: 10.5px; color: #7dd3fc; margin-top: 4px; }
+  .modal-thumb-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 7px;
+  }
+  .thumb-card {
+    position: relative;
+    width: 102px;
+    background: #080f1d;
+    border: 1px solid var(--cyan);
+    border-radius: 6px;
+    padding: 4px;
+    text-align: center;
+  }
+  .thumb-card img {
+    width: 100%;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+    cursor: pointer;
+  }
+  .thumb-cap {
+    font-size: 9.5px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .thumb-dir-row {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+    align-items: center;
+  }
+  .thumb-dir-sel {
+    flex: 1;
+    min-width: 0;
+    padding: 2px 3px !important;
+    font-size: 10.5px !important;
+    background: #101a2e !important;
+    border: 1px solid #334155 !important;
+    color: #7dd3fc !important;
+    border-radius: 4px !important;
+  }
+  .thumb-dir-btn {
+    padding: 2px 5px;
+    font-size: 11px;
+    background: #0c2742;
+    border-color: var(--cyan);
+  }
+  .thumb-del {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #dc2626;
+    border: 1.5px solid #fff;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 0;
+    justify-content: center;
+    line-height: 1;
+  }
+  .type-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .type-btn { justify-content: center; padding: 8px 6px; font-size: 12px; border-width: 1.5px; }
+  .type-btn.sel-ADD { background: rgba(34,197,94,0.25); border-color: #22c55e; color: #86efac; font-weight: bold; }
+  .type-btn.sel-REP { background: rgba(168,85,247,0.28); border-color: #a855f7; color: #e9d5ff; font-weight: bold; }
+  .type-btn.sel-MOD { background: rgba(245,158,11,0.25); border-color: #f59e0b; color: #fde68a; font-weight: bold; }
+  .type-btn.sel-REM { background: rgba(239,68,68,0.25); border-color: #ef4444; color: #fca5a5; font-weight: bold; }
+  .modal-stats {
+    font-size: 11.5px;
+    color: var(--cyan);
+    background: #080f1d;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 10px;
+    text-align: start;
+  }
+  .rep-box {
+    border: 1px dashed var(--purple);
+    border-radius: 8px;
+    padding: 8px;
+    background: rgba(168, 85, 247, 0.08);
+    margin-bottom: 10px;
+  }
+  .modal-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+
+  /* Lightbox */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 15, 0.92);
+    z-index: 80;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    cursor: pointer;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img {
+    max-width: 96vw;
+    max-height: 82vh;
+    border: 2px solid var(--cyan);
+    border-radius: 8px;
+    object-fit: contain;
+  }
+  .lightbox-cap { margin-top: 10px; color: var(--cyan); font-size: 13px; text-align: center; }
+
+  /* Clean Survey Mode (Hide UI / Full Canvas) */
+  body.clean-mode .toolbar,
+  body.clean-mode .drawer,
+  body.clean-mode .status {
+    display: none !important;
+  }
+  body.clean-mode.hide-hud .zoom-fab,
+  body.clean-mode.hide-hud .nav-hud {
+    display: none !important;
+  }
+  .clean-hud {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 26;
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    background: rgba(8, 15, 29, 0.88);
+    border: 1.5px solid var(--cyan);
+    border-radius: 10px;
+    padding: 5px 7px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6);
+    max-width: calc(100% - 20px);
+    backdrop-filter: blur(4px);
+  }
+  body.clean-mode .clean-hud {
+    display: flex;
+  }
+  .clean-hud button {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  .autosave-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #86efac;
+    background: rgba(21, 128, 61, 0.18);
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin-inline-start: 6px;
+  }
+  .section-box.save-box {
+    border-color: #15803d;
+    background: rgba(21, 128, 61, 0.12);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Main Toolbar -->
+  <div class="toolbar">
+    <!-- Row 1 -->
+    <div class="row">
+      <label class="file-btn">📂 <span id="lblLoadImg">صورة</span><input type="file" id="fileIn" accept="image/*"></label>
+      <button id="modeBoundaryBtn" class="btn-active" disabled></button>
+      <button id="modeFeatureBtn" disabled></button>
+      <button id="modePanBtn" disabled></button>
+      <button id="toggleListBtn" disabled><span id="lblListBtn"></span> <span class="badge" id="featCountBadge">0</span></button>
+      <button id="toggleSettingsBtn" disabled></button>
+      <button id="compassToggleBtn" title="Compass">🧭</button>
+      <button id="gpsToggleBtn" title="GPS">🛰️</button>
+      <button id="cleanModeBtn" disabled>👁️‍🗨️</button>
+      <button id="fullscreenBtn">⛶</button>
+      <button id="langToggleBtn" class="btn-lang" title="Switch Language">EN</button>
+    </div>
+
+    <!-- Row 2: Contextual actions -->
+    <div class="row" id="contextRow">
+      <!-- Boundary controls -->
+      <button id="closePolyBtn" class="btn-green" disabled></button>
+      <button id="undoBoundaryBtn" disabled></button>
+      <button id="clearBoundaryBtn" class="btn-danger" disabled></button>
+
+      <!-- Feature controls -->
+      <button id="geomPolyBtn" style="display:none" disabled></button>
+      <button id="geomPinBtn" style="display:none" disabled></button>
+      <span class="sep" id="featSep" style="display:none"></span>
+      <button id="finishFeatBtn" class="btn-green" style="display:none" disabled></button>
+      <button id="undoFeatBtn" style="display:none" disabled></button>
+      <button id="cancelFeatBtn" class="btn-danger" style="display:none" disabled></button>
+      <button id="toggleEditSavedBtn" style="display:none" disabled></button>
+
+      <!-- Shared GPS Drop Vertex Button (shown in Boundary & Feature modes) -->
+      <button id="dropGpsPtBtn" class="btn-primary" style="display:none" disabled></button>
+
+      <!-- Scale calibration controls -->
+      <button id="cancelScaleBtn" class="btn-danger" style="display:none"></button>
+
+      <!-- Georeferencing GCP controls -->
+      <button id="doneGeorefBtn" class="btn-green" style="display:none"></button>
+      <button id="undoGcpBtn" style="display:none" disabled></button>
+      <button id="clearGcpBtn" class="btn-danger" style="display:none" disabled></button>
+    </div>
+  </div>
+
+  <!-- Settings & Export Drawer -->
+  <div class="drawer" id="settingsDrawer">
+    <!-- Grid controls -->
+    <div class="section-box">
+      <div class="row" style="margin-bottom:6px;">
+        <span class="ctrl"><span id="lblCols"></span> <input type="number" id="colsIn" value="6" min="2" max="20"></span>
+        <span class="ctrl"><span id="lblRows"></span> <input type="number" id="rowsIn" value="4" min="2" max="20"></span>
+        <label class="ctrl"><input type="checkbox" id="alignIn" checked> <span id="lblAlign"></span></label>
+        <label class="ctrl"><input type="checkbox" id="dimIn" checked> <span id="lblDim"></span></label>
+        <label class="ctrl"><input type="checkbox" id="subIn"> <span id="lblSub"></span></label>
+        <label class="ctrl"><input type="checkbox" id="showGridIn" checked> <span id="lblShowGrid"></span></label>
+      </div>
+      <div class="row">
+        <span id="lblLayersTitle" style="font-size:11.5px; color:#94a3b8;"></span>
+        <label class="ctrl"><input type="checkbox" id="filtRemIn" checked> <span id="lblFiltRem"></span></label>
+        <label class="ctrl"><input type="checkbox" id="filtRepIn" checked> <span id="lblFiltRep"></span></label>
+        <label class="ctrl"><input type="checkbox" id="filtModIn" checked> <span id="lblFiltMod"></span></label>
+        <label class="ctrl"><input type="checkbox" id="filtAddIn" checked> <span id="lblFiltAdd"></span></label>
+        <label class="ctrl"><input type="checkbox" id="filtPinIn" checked> <span id="lblFiltPin"></span></label>
+        <label class="ctrl"><input type="checkbox" id="showGcpIn" checked> <span id="lblShowGcp"></span></label>
+      </div>
+    </div>
+
+    <!-- GPS Georeferencing & Scale Box -->
+    <div class="section-box gps-box">
+      <div class="section-title cyan" id="lblGpsSectionTitle"></div>
+      <div class="row" style="margin-bottom:6px;">
+        <button id="modeGeorefBtn" class="btn-primary" disabled></button>
+        <button id="manualCoordPtBtn" class="btn-amber" disabled></button>
+        <button id="modeScaleBtn" disabled></button>
+      </div>
+      <div class="row">
+        <span class="ctrl" id="georefInfoLbl"></span>
+        <span class="ctrl" id="scaleInfoLbl"></span>
+      </div>
+    </div>
+
+    <!-- Auto-Save Session Box -->
+    <div class="section-box save-box">
+      <div class="section-title" style="color:#86efac;" id="lblAutosaveSectionTitle"></div>
+      <div class="row">
+        <span class="ctrl" id="autosaveInfoLbl"></span>
+        <button id="clearAutosaveBtn" class="btn-danger"></button>
+      </div>
+    </div>
+
+    <!-- AI Agent Export Section -->
+    <div class="section-box ai-box">
+      <div class="section-title purp" id="lblAiExportTitle"></div>
+      <div class="row">
+        <button id="exportZipBtn" class="btn-purple" disabled></button>
+        <button id="exportRefSheetBtn" class="btn-primary" disabled></button>
+        <label class="ctrl"><input type="checkbox" id="embedJsonPhotosIn" checked> <span id="lblEmbedPhotos"></span></label>
+      </div>
+    </div>
+
+    <!-- Standard Exports & Project Save/Load -->
+    <div class="row">
+      <button id="saveCropBtn" class="btn-primary" disabled></button>
+      <button id="saveFullBtn" class="btn-amber" disabled></button>
+      <button id="exportJsonBtn" class="btn-green" disabled></button>
+      <label class="ctrl" style="cursor:pointer;">⬆️ <span id="lblImportJson"></span><input type="file" id="importJsonIn" accept=".json,application/json"></label>
+    </div>
+  </div>
+
+  <!-- Features List Drawer -->
+  <div class="drawer" id="listDrawer">
+    <div id="featuresListContainer"></div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status" id="statusBar"></div>
+
+  <!-- Interactive Stage -->
+  <div class="stage" id="stage">
+    <canvas id="viewCanvas"></canvas>
+    <div class="toast" id="toastEl"></div>
+
+    <!-- Clean Survey Mode Floating Quick Bar -->
+    <div class="clean-hud" id="cleanHud">
+      <button id="exitCleanBtn" class="btn-primary"></button>
+      <button id="cleanFsBtn">⛶</button>
+      <button id="cleanToggleHudBtn"></button>
+      <span class="badge" id="cleanModeBadge"></span>
+      <button id="cleanGpsDropBtn" class="btn-primary" style="display:none">🛰️+</button>
+      <button id="cleanUndoBtn" style="display:none">↩️</button>
+      <button id="cleanFinishBtn" class="btn-green" style="display:none">✅</button>
+    </div>
+
+    <!-- Zoom FAB -->
+    <div class="zoom-fab">
+      <button id="zoomInBtn" disabled>+</button>
+      <button id="zoomOutBtn" disabled>−</button>
+      <button id="fitBtn" disabled>⊡</button>
+    </div>
+
+    <!-- Floating Compass & Live GPS HUD -->
+    <div class="nav-hud">
+      <div class="gps-pill" id="gpsHudPill" style="display:none;">🛰️ --</div>
+      <div class="compass-widget inactive" id="compassHud" title="Toggle Live Compass">
+        <svg class="compass-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="#080f1d" stroke="#1e3354" stroke-width="3"/>
+          <g id="compassDialGroup" transform="rotate(0 50 50)">
+            <text x="50" y="17" text-anchor="middle" fill="#ef4444" font-size="14" font-weight="bold">N</text>
+            <text x="86" y="54" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">E</text>
+            <text x="50" y="91" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">S</text>
+            <text x="14" y="54" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="bold">W</text>
+            <polygon points="50,22 44,50 56,50" fill="#ef4444"/>
+            <polygon points="50,78 44,50 56,50" fill="#38bdf8"/>
+            <circle cx="50" cy="50" r="5" fill="#e2e8f0"/>
+          </g>
+          <!-- Fixed top lubber line showing device pointing direction -->
+          <polygon points="50,1 46,8 54,8" fill="#22c55e"/>
+        </svg>
+        <div class="compass-readout" id="compassReadout">OFF</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feature Metadata Modal -->
+<div class="modal-backdrop" id="featModal">
+  <div class="modal">
+    <h3>
+      <span id="modalTitle"></span>
+      <span class="badge" id="modalIdBadge">ID-01</span>
+    </h3>
+    <div class="modal-stats" id="modalStats"></div>
+
+    <div class="field">
+      <label id="lblOpType"></label>
+      <div class="type-picker">
+        <button type="button" class="type-btn" data-type="ADD" id="typeBtnADD"></button>
+        <button type="button" class="type-btn" data-type="REP" id="typeBtnREP"></button>
+        <button type="button" class="type-btn" data-type="REM" id="typeBtnREM"></button>
+        <button type="button" class="type-btn" data-type="MOD" id="typeBtnMOD"></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="featNameIn" id="lblFeatName"></label>
+      <input type="text" id="featNameIn">
+    </div>
+
+    <div class="field">
+      <label for="featPhotoIn" id="lblFeatPhoto"></label>
+      <div class="photo-row">
+        <input type="text" id="featPhotoIn">
+        <label class="photo-pick-btn">📷 <span id="lblPickPhotos"></span><input type="file" id="photoFilePicker" accept="image/*" multiple></label>
+      </div>
+      <div class="photo-hint" id="photoHintLbl"></div>
+      <div class="modal-thumb-strip" id="modalThumbStrip"></div>
+    </div>
+
+    <!-- Single-step notes (ADD / REM / MOD) -->
+    <div class="field" id="singleNoteWrap">
+      <label for="featNotesIn" id="singleNoteLbl"></label>
+      <textarea id="featNotesIn"></textarea>
+    </div>
+
+    <!-- Dual-step notes (REP) -->
+    <div class="rep-box" id="repFieldsWrap" style="display:none;">
+      <div class="field">
+        <label for="repRemoveIn" id="lblRepRemove" style="color:#fca5a5;"></label>
+        <textarea id="repRemoveIn"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="repAddIn" id="lblRepAdd" style="color:#86efac;"></label>
+        <textarea id="repAddIn"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="modalSaveBtn" class="btn-green"></button>
+      <button type="button" id="modalResumeBtn"></button>
+      <button type="button" id="modalDiscardBtn" class="btn-danger"></button>
+    </div>
+  </div>
+</div>
+
+<!-- GCP / Manual Lat-Lon Input Modal -->
+<div class="modal-backdrop" id="coordModal">
+  <div class="modal">
+    <h3>
+      <span id="coordModalTitle"></span>
+      <span class="badge" id="coordModalBadge">GCP</span>
+    </h3>
+    <div class="modal-stats" id="coordModalInfo"></div>
+
+    <div class="field">
+      <button type="button" id="coordFetchGpsBtn" class="btn-primary" style="width:100%; justify-content:center;"></button>
+    </div>
+
+    <div class="field">
+      <label for="coordQuickPasteIn" id="lblCoordQuickPaste"></label>
+      <input type="text" id="coordQuickPasteIn" dir="ltr" placeholder="31.351234, 34.284567">
+    </div>
+
+    <div class="two-col">
+      <div class="field">
+        <label for="coordLatIn" id="lblCoordLat"></label>
+        <input type="text" id="coordLatIn" dir="ltr" inputmode="decimal" placeholder="31.351234">
+      </div>
+      <div class="field">
+        <label for="coordLonIn" id="lblCoordLon"></label>
+        <input type="text" id="coordLonIn" dir="ltr" inputmode="decimal" placeholder="34.284567">
+      </div>
+    </div>
+
+    <div class="field" id="coordLabelWrap">
+      <label for="coordNameIn" id="lblCoordName"></label>
+      <input type="text" id="coordNameIn">
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="coordConfirmBtn" class="btn-green"></button>
+      <button type="button" id="coordCancelBtn" class="btn-danger"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Zoom Lightbox -->
+<div class="lightbox" id="photoLightbox">
+  <img id="lightboxImg" alt="">
+  <div class="lightbox-cap" id="lightboxCap"></div>
+</div>
+
+<script>
+(() => {
+  // --- Bilingual Dictionary (AR / EN) ---
+  const I18N = {
+    ar: {
+      docTitle: 'أداة مسح القرية (بوصلة + GPS + AI)',
+      langSwitch: 'EN',
+      loadImg: 'صورة',
+      modeBoundary: '🗺️ الحدود',
+      modeFeature: '📍 تعليم معلم',
+      modePan: '✋ تحريك',
+      listBtn: '📋 المعالم',
+      settingsBtn: '⚙️ الإعدادات والحفظ',
+      closePoly: '✅ إغلاق وتقسيم',
+      undo: '↩️ تراجع',
+      clearBoundary: '🗑️ مسح الحدود',
+      geomPoly: '📐 مضلع',
+      geomPin: '📌 دبوس',
+      finishFeat: '✅ حفظ الشكل',
+      undoPoint: '↩️ تراجع نقطة',
+      cancelDraft: '✖️ إلغاء',
+      editSavedOn: '🔒 إنهاء التحريك',
+      editSavedOff: '🔓 تحريك السابق',
+      dropGpsPt: '🛰️+ نقطة GPS',
+      cancelScale: '✖️ إنهاء المعايرة',
+      doneGeoref: '✅ إنهاء الربط الجغرافي',
+      undoGcp: '↩️ حذف آخر نقطة ربط',
+      clearGcp: '🗑️ مسح نقاط الربط',
+      cols: 'أعمدة:',
+      rows: 'صفوف:',
+      align: 'محاذاة للحدود',
+      dim: 'تعتيم الخارج',
+      sub: 'خطوط فرعية',
+      showGrid: 'الشبكة',
+      layersTitle: 'الطبقات:',
+      filtRem: '🔴 إزالة',
+      filtRep: '🟣 استبدال',
+      filtMod: '🟠 تعديل',
+      filtAdd: '🟢 إضافة',
+      filtPin: '📌 دبابيس',
+      showGcp: '🎯 نقاط الربط',
+      gpsSectionTitle: '🛰️ الربط الجغرافي للخريطة بالـ GPS والمعايرة (لتعليم النقاط بموقعك الفعلي)',
+      modeGeoref: '🌐 ربط الخريطة بالـ GPS (GCP)',
+      manualCoordPt: '⌨️ إضافة نقطة بإحداثية Lat,Lon',
+      scaleBtn: '📏 معايرة المقياس (متر)',
+      scaleUncal: 'المقياس: غير معاير',
+      scaleCal: pxPerM => `المقياس: ${pxPerM} بكسل/متر`,
+      georefNone: n => `الربط الجغرافي: ${n}/2 (يلزم نقطتان على الأقل، 3 للأدق)`,
+      georefOk: (n, rms) => `✅ مربوط جغرافياً (${n} نقاط | دقة ${rms}px)`,
+      aiExportTitle: '🤖 تصدير جاهز لوكلاء الذكاء الاصطناعي (يربط كل معلم بصوره وإحداثياته)',
+      exportZip: '🤖 حزمة AI كاملة (ZIP)',
+      exportZipBusy: '⏳ جارٍ تجهيز الحزمة...',
+      exportRefSheet: '🖼️ لوحة مرجعية (PNG)',
+      embedPhotos: 'تضمين الصور في JSON (Base64)',
+      saveCrop: '✂️ القرية مقصوصة (PNG)',
+      saveFull: '💾 الخريطة كاملة (PNG)',
+      exportJson: '📦 حفظ JSON',
+      importJson: 'استيراد JSON',
+      zoomIn: 'تكبير',
+      zoomOut: 'تصغير',
+      fit: 'ملاءمة الشاشة',
+      statusStart: '<span>1) اضغط "صورة" لاختيار صورة القمر الصناعي الأصلية</span>',
+      statusB0: '<span>وضع الحدود: انقر على زوايا القرية أو استخدم "🛰️+ نقطة GPS" (بعد الربط الجغرافي)</span>',
+      statusBNeed: (n, need) => `<span class="warn">نقاط الحدود: ${n} — أضف ${need} نقطة أخرى</span>`,
+      statusBReady: n => `<span class="ok">نقاط الحدود: ${n} — انقر النقطة الخضراء (1) أو اضغط "إغلاق وتقسيم"</span>`,
+      statusBDone: cnt => `<span class="ok">✅ القرية مقسّمة (${cnt} قطاعاً) | اضغط "📍 تعليم معلم" لرسم مضلع أو دبوس يدوياً أو بالـ GPS</span>`,
+      statusEditSaved: '<span class="purp">🔓 وضع التحريك: اسحب أي زاوية مضلع أو دبوس محفوظ لضبطه، ثم اضغط "إنهاء التحريك"</span>',
+      statusFPin: cnt => `<span class="ok">📌 وضع الدبوس (${cnt} محفوظ): انقر على الخريطة أو اضغط "🛰️+ نقطة GPS" لوضع دبوس في موقعك</span>`,
+      statusFPoly0: cnt => `<span class="ok">📐 وضع المضلع (${cnt} محفوظ): انقر على الزوايا أو اضغط "🛰️+ نقطة GPS" لإضافة زاوية عند موقعك الحالي</span>`,
+      statusFPolyNeed: (id, n, need) => `<span class="warn">رسم ${id}: تم وضع ${n} نقطة — أضف ${need} نقطة أخرى (يدوياً أو بالـ GPS)</span>`,
+      statusFPolyReady: (id, n) => `<span class="ok">رسم ${id}: ${n} نقاط — انقر النقطة الخضراء (1) أو اضغط "حفظ الشكل"</span>`,
+      statusScale1: '<span class="warn">📏 معايرة المقياس: انقر النقطة الأولى من ضلع ثابت معروف طوله بالمتر</span>',
+      statusScale2: '<span class="warn">📏 معايرة المقياس: انقر النقطة الثانية من نفس الضلع</span>',
+      statusGeoref: n => `<span class="warn">🌐 وضع الربط الجغرافي (GCP: ${n}): انقر على زاوية معلم ثابت معروفة إحداثياته (يفضّل 3 زوايا متباعدة)</span>`,
+      statusPan: '<span>✋ وضع التحريك والتكبير فقط — لن تُضاف أي نقاط عند اللمس</span>',
+      modalNewPoly: 'حفظ معلم (مساحة / مضلع)',
+      modalNewPin: 'حفظ معلم (نقطة / دبوس)',
+      modalEditPoly: 'تعديل بيانات معلم (مساحة)',
+      modalEditPin: 'تعديل بيانات معلم (دبوس)',
+      opTypeLbl: 'نوع العملية (مرتّبة تلقائياً حسب أولوية التنفيذ)',
+      typeADD: '🟢 إضافة (ADD)',
+      typeREP: '🟣 استبدال: إزالة+إضافة',
+      typeREM: '🔴 إزالة فقط (REM)',
+      typeMOD: '🟠 تعديل قائم (MOD)',
+      shortType: { REM: 'إزالة', REP: 'استبدال', MOD: 'تعديل', ADD: 'إضافة' },
+      geomTagPoly: '📐 مساحة',
+      geomTagPin: '📌 دبوس',
+      featNameLbl: 'اسم المعلم (يظهر على الخريطة)',
+      featNamePhPoly: 'مثال: ملعب، خيمة مكان الشجرة، إزالة أشجار...',
+      featNamePhPin: 'مثال: عمود إنارة، خزان وقود، كاميرا، شجرة...',
+      featPhotoLbl: 'الصور الميدانية المرجعية + اتجاه التصوير بالبوصلة',
+      featPhotoPh: 'أسماء الصور المرفقة أو ملاحظة مرجعية...',
+      pickPhotos: 'إرفاق صور',
+      photoHintIdle: 'تُضغط الصور (1024px) ويمكنك تحديد اتجاه البوصلة لكل صورة ليساعد الذكاء الاصطناعي في المحاكاة.',
+      photoHintProcessing: '⏳ جارٍ معالجة وضغط الصور المرفقة...',
+      photoAttachedCount: (n, kb) => `✅ ${n} صورة (${kb} KB) — حدد اتجاه البوصلة لكل صورة أو اضغط 🧭 لالتقاطه`,
+      dirNone: 'اتجاه؟',
+      dirStampTitle: 'التقاط اتجاه البوصلة الحالية',
+      noteLblREM: 'ما الذي سيُزال وما لون الأرضية التي ستظهر مكانه؟',
+      notePhREM: 'مثال: إزالة شجرة وتنظيف المكان لتظهر الأرضية ترابية رملية',
+      noteLblMOD: 'ما التعديل المطلوب على هذا المعلم القائم؟',
+      notePhMOD: 'مثال: توسعة السقف، تغيير لون القماش، استبدال مظلة...',
+      noteLblADD: 'وصف المعلم المضاف من الأعلى (90°) للدمج الطبيعي:',
+      notePhADD: 'مثال: خيمة بيضاء 4×6م ارتفاع 2.5م، أو برميل ديزل/عمود...',
+      repRemLbl: 'الخطوة 1 — ما سيُزال من الصورة الأصلية (REM):',
+      repRemPh: 'مثال: إزالة الشجرة وظلّها وتنظيف الأرضية لتصبح ترابية',
+      repAddLbl: 'الخطوة 2 — ما سيُضاف مكانه فوق الأرضية النظيفة (ADD):',
+      repAddPh: 'مثال: إضافة خيمة بيضاء بأبعاد 5×4م، ارتفاع 2.5م',
+      modalSave: '💾 حفظ المعلم',
+      modalResume: '↩️ تعديل النقاط',
+      modalDiscardNew: '🗑️ إلغاء',
+      modalClose: 'إغلاق',
+      listEmpty: 'لا توجد معالم بعد. استخدم "📍 تعليم معلم" لرسم مضلع أو دبوس.',
+      unnamed: '(بدون اسم)',
+      sectorPrefix: 'القطاع:',
+      sectorNone: 'القطاع: (لم تُغلق الحدود بعد)',
+      sectorOut: 'القطاع: خارج الحدود',
+      corners: n => `النقاط: ${n} زوايا`,
+      pinPointStat: (x, y) => `دبوس (X:${Math.round(x)}, Y:${Math.round(y)})`,
+      areaPerim: (a, p) => `المساحة: ${a} م² | المحيط: ${p} م`,
+      repSummaryRem: '1- إزالة:',
+      repSummaryAdd: '2- إضافة:',
+      focusTitle: 'عرض على الخريطة',
+      editTitle: 'تعديل البيانات',
+      delTitle: 'حذف المعلم',
+      confirmDelFeat: id => `حذف المعلم ${id}؟`,
+      confirmClearB: 'مسح نقاط حدود القرية؟',
+      confirmClearGcp: 'مسح جميع نقاط الربط الجغرافي (GCP)؟',
+      confirmSwitchPin: 'لديك نقاط مضلع غير محفوظة. هل تريد إلغاءها والانتقال لوضع الدبوس؟',
+      promptScale: 'أدخل الطول الحقيقي لهذا الضلع بالمتر (مثال: 25.5):',
+      alertBadJson: 'تعذّر قراءة ملف JSON.',
+      alertNoFeaturesSheet: 'أضف معلماً واحداً على الأقل لتوليد اللوحة المرجعية.',
+      refSheetTitle: 'AI VISUAL REFERENCE SHEET — لوحة مرجعية لمعالم القرية',
+      refSheetMapCtx: 'موقع المعلم على الخريطة (MAP CONTEXT)',
+      refSheetFieldPhotos: 'الصور الميدانية المرفقة + اتجاه التصوير (FIELD PHOTOS)',
+      refSheetNoPhoto: 'لا توجد صورة ميدانية مرفقة لهذا المعلم',
+      // Compass & GPS Modals/Toasts
+      coordTitleGcp: 'ربط نقطة جغرافية (GCP)',
+      coordTitleManualPt: 'إسقاط نقطة بإحداثية يدوية (Lat, Lon)',
+      coordInfoGcp: (x, y) => `بكسل الصورة: (${Math.round(x)}, ${Math.round(y)}) — أدخل إحداثية هذه الزاوية من Google Earth أو GPS الهاتف`,
+      coordInfoManual: 'أدخل إحداثية من Garmin أو Google Earth لإسقاطها كنقطة في الشكل النشط',
+      coordFetchGps: '📡 التقاط موقعي الحالي بالـ GPS',
+      coordFetchingGps: '⏳ جارٍ التقاط إشارة GPS...',
+      coordQuickPasteLbl: 'لصق سريع (Lat, Lon معاً من Google Earth / Maps):',
+      coordLatLbl: 'خط العرض (Latitude):',
+      coordLonLbl: 'خط الطول (Longitude):',
+      coordNameLbl: 'اسم النقطة المرجعية (اختياري):',
+      coordNamePh: 'مثال: زاوية السور الشمالي الغربي R1',
+      coordConfirmGcp: '✅ حفظ نقطة الربط',
+      coordConfirmPt: '📍 إسقاط النقطة على الخريطة',
+      coordCancel: 'إلغاء',
+      toastNeedGeoref: '⚠️ يجب ربط الخريطة بنقطتين جغرافيتين (GCP) على الأقل أولاً! تم فتح الإعدادات.',
+      toastNoGpsFix: '⏳ لم تتوفر إشارة GPS بعد. تأكد من تفعيل الموقع وفتح الصفحة عبر HTTPS/localhost، أو استخدم الإدخال اليدوي.',
+      toastGpsDropped: acc => `✅ تمت إضافة نقطة GPS (دقة ±${acc}م) — يمكنك سحب النقطة لضبطها يدوياً`,
+      toastGpsOutOfBounds: '⚠️ موقع الـ GPS خارج حدود هذه الصورة! تأكد من صحة نقاط الربط (GCP) أو عدم وجود تشويش GPS.',
+      toastCompassOn: '🧭 تم تفعيل البوصلة الحية',
+      toastCompassOff: '🧭 تم إيقاف البوصلة',
+      toastCompassNoSensor: '⚠️ حساس البوصلة غير متاح (يتطلب هاتفاً عبر HTTPS/localhost). يمكنك اختيار الاتجاه يدوياً للصور.',
+      toastCompassNeedLive: '⚠️ فعّل البوصلة الحية أولاً (زر 🧭 في الأعلى)، أو اختر الاتجاه من القائمة يدوياً.',
+      toastGpsOn: '🛰️ جارٍ تتبع الـ GPS الحي...',
+      toastGpsOff: '🛰️ تم إيقاف تتبع الـ GPS',
+      toastGpsError: msg => `⚠️ خطأ GPS: ${msg}`,
+      toastInvalidCoords: '⚠️ يرجى إدخال خط عرض وطول صحيحين (مثال: 31.3512, 34.2845).',
+      toastGcpAdded: n => `✅ تم حفظ نقطة الربط GCP-${n}` + (n >= 2 ? ' — الربط الجغرافي فعّال الآن!' : ' (أضف نقطة أخرى على الأقل)'),
+      cleanModeBtn: 'إخفاء الأزرار',
+      fullscreenTitle: 'شاشة كاملة',
+      exitCleanBtn: '🎛️ عرض الأزرار',
+      cleanHudHide: 'إخفاء البوصلة',
+      cleanHudShow: 'إظهار البوصلة',
+      autosaveSectionTitle: '💾 الحفظ التلقائي المحلي (يحفظ عملك تلقائياً بعد كل خطوة)',
+      autosaveIdle: 'الحفظ التلقائي: جاهز (لم يُحفظ شيء بعد)',
+      autosaveSaved: time => `💾 محفوظ تلقائياً (${time})`,
+      autosaveLite: time => `💾 محفوظ (بيانات فقط ${time})`,
+      autosaveFailed: '⚠️ تعذّر الحفظ المحلي في المتصفح',
+      clearAutosaveBtn: '🧹 مسح الجلسة المحفوظة',
+      confirmClearAutosave: 'هل تريد مسح الجلسة المحفوظة تلقائياً (الحدود، نقاط الربط، والمعالم) للبدء من جديد؟',
+      toastRestoredFull: (fCnt, gCnt) => `💾 تم استعادة آخر جلسة تلقائياً (${fCnt} معلم | ${gCnt} نقطة ربط)`,
+      toastRestoredMeta: (fCnt, gCnt) => `💾 تم استعادة البيانات (${fCnt} معلم | ${gCnt} GCP) — اختر صورة الخريطة الأصلية لإكمال العمل`,
+      toastAutosaveCleared: '🧹 تم مسح الجلسة المحفوظة والبدء من جديد',
+      toastCleanModeOn: '✨ تم إخفاء الأزرار لتوسيع الخريطة — اضغط "عرض الأزرار" للرجوع',
+      toastFsUnavailable: 'ℹ️ المتصفح لا يدعم الشاشة الكاملة هنا — تم تفعيل وضع إخفاء الأزرار بدلاً منها',
+      cleanBadgeBoundary: n => `🗺️ حدود (${n})`,
+      cleanBadgePoly: n => `📐 مضلع (${n})`,
+      cleanBadgePin: '📌 دبوس',
+      cleanBadgeGeoref: n => `🌐 GCP (${n})`,
+      cleanBadgeScale: '📏 مقياس',
+      cleanBadgePan: '✋ تحريك'
+    },
+    en: {
+      docTitle: 'Village Survey Tool (Compass + GPS + AI)',
+      langSwitch: 'عربي',
+      loadImg: 'Image',
+      modeBoundary: '🗺️ Boundary',
+      modeFeature: '📍 Mark Item',
+      modePan: '✋ Pan',
+      listBtn: '📋 Items',
+      settingsBtn: '⚙️ Settings & Export',
+      closePoly: '✅ Close & Split',
+      undo: '↩️ Undo',
+      clearBoundary: '🗑️ Clear Boundary',
+      geomPoly: '📐 Polygon',
+      geomPin: '📌 Pin',
+      finishFeat: '✅ Save Shape',
+      undoPoint: '↩️ Undo Pt',
+      cancelDraft: '✖️ Cancel',
+      editSavedOn: '🔒 Done Moving',
+      editSavedOff: '🔓 Move Saved',
+      dropGpsPt: '🛰️+ GPS Point',
+      cancelScale: '✖️ Exit Scale',
+      doneGeoref: '✅ Finish Georef',
+      undoGcp: '↩️ Undo Last GCP',
+      clearGcp: '🗑️ Clear GCPs',
+      cols: 'Cols:',
+      rows: 'Rows:',
+      align: 'Align Edge',
+      dim: 'Dim Outside',
+      sub: 'Sub-Grid',
+      showGrid: 'Grid',
+      layersTitle: 'Layers:',
+      filtRem: '🔴 REM',
+      filtRep: '🟣 REP',
+      filtMod: '🟠 MOD',
+      filtAdd: '🟢 ADD',
+      filtPin: '📌 Pins',
+      showGcp: '🎯 GCPs',
+      gpsSectionTitle: '🛰️ GPS Georeferencing & Scale (Required to Plot Live GPS Points on Image)',
+      modeGeoref: '🌐 Georeference Map (GCP)',
+      manualCoordPt: '⌨️ Drop Point by Lat,Lon',
+      scaleBtn: '📏 Calibrate Scale (m)',
+      scaleUncal: 'Scale: Uncalibrated',
+      scaleCal: pxPerM => `Scale: ${pxPerM} px/m`,
+      georefNone: n => `Georef: ${n}/2 GCPs (min 2, 3 recommended)`,
+      georefOk: (n, rms) => `✅ Georeferenced (${n} GCPs | RMS ${rms}px)`,
+      aiExportTitle: '🤖 AI-Agent Ready Exports (Links Features, Photos, Bearings & GPS)',
+      exportZip: '🤖 Full AI Package (ZIP)',
+      exportZipBusy: '⏳ Building ZIP...',
+      exportRefSheet: '🖼️ Reference Sheet (PNG)',
+      embedPhotos: 'Embed Photos in JSON (Base64)',
+      saveCrop: '✂️ Cropped Village (PNG)',
+      saveFull: '💾 Full Map (PNG)',
+      exportJson: '📦 Save JSON',
+      importJson: 'Import JSON',
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
+      fit: 'Fit Screen',
+      statusStart: '<span>1) Tap "Image" to load the base satellite map</span>',
+      statusB0: '<span>Boundary Mode: Tap corners or use "🛰️+ GPS Point" (after Georeferencing)</span>',
+      statusBNeed: (n, need) => `<span class="warn">Boundary points: ${n} — add ${need} more</span>`,
+      statusBReady: n => `<span class="ok">Boundary points: ${n} — tap green point (1) or "Close & Split"</span>`,
+      statusBDone: cnt => `<span class="ok">✅ Split into ${cnt} sectors | Tap "📍 Mark Item" to draw polygons/pins manually or via GPS</span>`,
+      statusEditSaved: '<span class="purp">🔓 Move Mode: Drag any saved vertex or pin, then tap "Done Moving"</span>',
+      statusFPin: cnt => `<span class="ok">📌 Pin Mode (${cnt} saved): Tap map or press "🛰️+ GPS Point" to drop a pin at your GPS location</span>`,
+      statusFPoly0: cnt => `<span class="ok">📐 Polygon Mode (${cnt} saved): Tap corners or press "🛰️+ GPS Point" to add a vertex at your location</span>`,
+      statusFPolyNeed: (id, n, need) => `<span class="warn">Drawing ${id}: ${n} pt(s) — add ${need} more (tap or GPS)</span>`,
+      statusFPolyReady: (id, n) => `<span class="ok">Drawing ${id}: ${n} pts — tap green point (1) or "Save Shape"</span>`,
+      statusScale1: '<span class="warn">📏 Scale Calibration: Tap the 1st endpoint of a known straight edge</span>',
+      statusScale2: '<span class="warn">📏 Scale Calibration: Tap the 2nd endpoint of the same edge</span>',
+      statusGeoref: n => `<span class="warn">🌐 Georef Mode (GCPs: ${n}): Tap a fixed corner with known Lat/Lon (3 spread corners recommended)</span>`,
+      statusPan: '<span>✋ Pan & Zoom only — taps will not add points</span>',
+      modalNewPoly: 'Save Area Feature (Polygon)',
+      modalNewPin: 'Save Point Feature (Pin)',
+      modalEditPoly: 'Edit Area Feature',
+      modalEditPin: 'Edit Point Pin',
+      opTypeLbl: 'Operation Type (auto-ordered for compositing)',
+      typeADD: '🟢 Add (ADD)',
+      typeREP: '🟣 Replace (REM+ADD)',
+      typeREM: '🔴 Remove Only (REM)',
+      typeMOD: '🟠 Modify Existing (MOD)',
+      shortType: { REM: 'REM', REP: 'REP', MOD: 'MOD', ADD: 'ADD' },
+      geomTagPoly: '📐 Area',
+      geomTagPin: '📌 Pin',
+      featNameLbl: 'Feature Name (shown on map)',
+      featNamePhPoly: 'e.g. Pitch, Tent replacing tree, Tree clearing...',
+      featNamePhPin: 'e.g. Light pole, Fuel drum, Camera, Tree...',
+      featPhotoLbl: 'Reference Field Photos + Camera Compass Bearing',
+      featPhotoPh: 'Attached photo names or manual ref...',
+      pickPhotos: 'Attach Photos',
+      photoHintIdle: 'Photos compress to 1024px. Tag each photo with compass direction so AI knows the camera angle.',
+      photoHintProcessing: '⏳ Compressing & attaching photos...',
+      photoAttachedCount: (n, kb) => `✅ ${n} photo(s) (${kb} KB) — pick bearing or tap 🧭 to stamp live heading`,
+      dirNone: 'Dir?',
+      dirStampTitle: 'Stamp live compass heading',
+      noteLblREM: 'What to remove & what ground surface should remain?',
+      notePhREM: 'e.g. Remove tree & shadow, restore sandy dirt ground',
+      noteLblMOD: 'What change is needed on this existing structure?',
+      notePhMOD: 'e.g. Roof extension, new tarp color, canopy update...',
+      noteLblADD: 'Top-down (90°) visual description for blending:',
+      notePhADD: 'e.g. White tent 4×6m, 2.5m high, or diesel drum/pole...',
+      repRemLbl: 'Step 1 — Remove from base map (REM):',
+      repRemPh: 'e.g. Remove tree and shadow, clean sandy ground',
+      repAddLbl: 'Step 2 — Add on clean ground (ADD):',
+      repAddPh: 'e.g. Add 5×4m white tent aligned to wall, height 2.5m',
+      modalSave: '💾 Save Item',
+      modalResume: '↩️ Edit Points',
+      modalDiscardNew: '🗑️ Discard',
+      modalClose: 'Close',
+      listEmpty: 'No items yet. Tap "📍 Mark Item" to draw a polygon or drop a pin.',
+      unnamed: '(Unnamed)',
+      sectorPrefix: 'Sector:',
+      sectorNone: 'Sector: (Boundary not closed)',
+      sectorOut: 'Sector: Outside boundary',
+      corners: n => `Vertices: ${n}`,
+      pinPointStat: (x, y) => `Pin (X:${Math.round(x)}, Y:${Math.round(y)})`,
+      areaPerim: (a, p) => `Area: ${a} m² | Perimeter: ${p} m`,
+      repSummaryRem: '1- Remove:',
+      repSummaryAdd: '2- Add:',
+      focusTitle: 'Focus on map',
+      editTitle: 'Edit metadata',
+      delTitle: 'Delete item',
+      confirmDelFeat: id => `Delete item ${id}?`,
+      confirmClearB: 'Clear all village boundary points?',
+      confirmClearGcp: 'Clear all Ground Control Points (GCPs)?',
+      confirmSwitchPin: 'You have unsaved polygon points. Discard them and switch to Pin mode?',
+      promptScale: 'Enter the real-world length of this edge in meters (e.g. 25.5):',
+      alertBadJson: 'Unable to parse JSON file.',
+      alertNoFeaturesSheet: 'Mark at least one feature first to generate the AI reference sheet.',
+      refSheetTitle: 'AI VISUAL REFERENCE SHEET — VILLAGE SURVEY FEATURES',
+      refSheetMapCtx: 'MAP LOCATION CONTEXT',
+      refSheetFieldPhotos: 'ATTACHED FIELD PHOTOS + CAMERA BEARING',
+      refSheetNoPhoto: 'No field photo attached for this feature',
+      coordTitleGcp: 'Set Ground Control Point (GCP)',
+      coordTitleManualPt: 'Drop Point by Manual Coordinates (Lat, Lon)',
+      coordInfoGcp: (x, y) => `Image pixel: (${Math.round(x)}, ${Math.round(y)}) — enter Lat/Lon from Google Earth or phone GPS`,
+      coordInfoManual: 'Enter Lat/Lon from Garmin or Google Earth to drop a point on the active shape',
+      coordFetchGps: '📡 Capture Current Phone GPS',
+      coordFetchingGps: '⏳ Reading GPS fix...',
+      coordQuickPasteLbl: 'Quick Paste (Lat, Lon from Google Earth / Maps):',
+      coordLatLbl: 'Latitude:',
+      coordLonLbl: 'Longitude:',
+      coordNameLbl: 'Anchor Label (optional):',
+      coordNamePh: 'e.g. NW Wall Corner R1',
+      coordConfirmGcp: '✅ Save GCP',
+      coordConfirmPt: '📍 Drop Point on Map',
+      coordCancel: 'Cancel',
+      toastNeedGeoref: '⚠️ Link at least 2 Ground Control Points (GCPs) first! Settings opened.',
+      toastNoGpsFix: '⏳ No live GPS fix yet. Enable Location over HTTPS/localhost, or use manual Lat/Lon input.',
+      toastGpsDropped: acc => `✅ GPS point added (±${acc}m) — drag vertex to fine-tune if needed`,
+      toastGpsOutOfBounds: '⚠️ GPS location falls outside this map image! Check GCPs or GPS interference.',
+      toastCompassOn: '🧭 Live compass enabled',
+      toastCompassOff: '🧭 Live compass stopped',
+      toastCompassNoSensor: '⚠️ Compass sensor unavailable (requires mobile HTTPS/localhost). You can pick photo directions manually.',
+      toastCompassNeedLive: '⚠️ Turn on live compass (🧭) first, or pick direction manually.',
+      toastGpsOn: '🛰️ Tracking live GPS...',
+      toastGpsOff: '🛰️ GPS tracking stopped',
+      toastGpsError: msg => `⚠️ GPS error: ${msg}`,
+      toastInvalidCoords: '⚠️ Enter valid decimal Latitude and Longitude (e.g. 31.3512, 34.2845).',
+      toastGcpAdded: n => `✅ Saved GCP-${n}` + (n >= 2 ? ' — Georeferencing is now ACTIVE!' : ' (add 1 more GCP)'),
+      cleanModeBtn: 'Hide UI',
+      fullscreenTitle: 'Fullscreen',
+      exitCleanBtn: '🎛️ Show Controls',
+      cleanHudHide: 'Hide HUD',
+      cleanHudShow: 'Show HUD',
+      autosaveSectionTitle: '💾 Local Auto-Save (Saves Automatically After Every Action)',
+      autosaveIdle: 'Auto-Save: Ready (nothing saved yet)',
+      autosaveSaved: time => `💾 Auto-Saved (${time})`,
+      autosaveLite: time => `💾 Saved (data only ${time})`,
+      autosaveFailed: '⚠️ Local browser storage unavailable',
+      clearAutosaveBtn: '🧹 Clear Saved Session',
+      confirmClearAutosave: 'Clear the auto-saved session (boundary, GCPs, and marked features) to start fresh?',
+      toastRestoredFull: (fCnt, gCnt) => `💾 Auto-restored last session (${fCnt} items | ${gCnt} GCPs)`,
+      toastRestoredMeta: (fCnt, gCnt) => `💾 Restored data (${fCnt} items | ${gCnt} GCPs) — pick your base map image to continue`,
+      toastAutosaveCleared: '🧹 Saved session cleared',
+      toastCleanModeOn: '✨ Controls hidden for maximum map area — tap "Show Controls" anytime',
+      toastFsUnavailable: 'ℹ️ Fullscreen API not supported here — Clean Canvas Mode enabled instead',
+      cleanBadgeBoundary: n => `🗺️ Boundary (${n})`,
+      cleanBadgePoly: n => `📐 Poly (${n})`,
+      cleanBadgePin: '📌 Pin',
+      cleanBadgeGeoref: n => `🌐 GCP (${n})`,
+      cleanBadgeScale: '📏 Scale',
+      cleanBadgePan: '✋ Pan'
+    }
+  };
+
+  let lang = 'ar';
+  try {
+    const savedLang = localStorage.getItem('village_survey_lang');
+    if (savedLang === 'en' || savedLang === 'ar') lang = savedLang;
+  } catch {}
+  const t = () => I18N[lang];
+
+  // --- DOM refs ---
+  const fileIn             = document.getElementById('fileIn');
+  const lblLoadImg         = document.getElementById('lblLoadImg');
+  const modeBoundaryBtn    = document.getElementById('modeBoundaryBtn');
+  const modeFeatureBtn     = document.getElementById('modeFeatureBtn');
+  const modePanBtn         = document.getElementById('modePanBtn');
+  const modeScaleBtn       = document.getElementById('modeScaleBtn');
+  const modeGeorefBtn      = document.getElementById('modeGeorefBtn');
+  const manualCoordPtBtn   = document.getElementById('manualCoordPtBtn');
+  const toggleListBtn      = document.getElementById('toggleListBtn');
+  const lblListBtn         = document.getElementById('lblListBtn');
+  const toggleSettingsBtn  = document.getElementById('toggleSettingsBtn');
+  const compassToggleBtn   = document.getElementById('compassToggleBtn');
+  const gpsToggleBtn       = document.getElementById('gpsToggleBtn');
+  const langToggleBtn      = document.getElementById('langToggleBtn');
+  const cleanModeBtn       = document.getElementById('cleanModeBtn');
+  const fullscreenBtn      = document.getElementById('fullscreenBtn');
+  const exitCleanBtn       = document.getElementById('exitCleanBtn');
+  const cleanFsBtn         = document.getElementById('cleanFsBtn');
+  const cleanToggleHudBtn  = document.getElementById('cleanToggleHudBtn');
+  const cleanModeBadge     = document.getElementById('cleanModeBadge');
+  const cleanGpsDropBtn    = document.getElementById('cleanGpsDropBtn');
+  const cleanUndoBtn       = document.getElementById('cleanUndoBtn');
+  const cleanFinishBtn     = document.getElementById('cleanFinishBtn');
+  const lblAutosaveSectionTitle = document.getElementById('lblAutosaveSectionTitle');
+  const autosaveInfoLbl    = document.getElementById('autosaveInfoLbl');
+  const clearAutosaveBtn   = document.getElementById('clearAutosaveBtn');
+  const featCountBadge     = document.getElementById('featCountBadge');
+
+  const closePolyBtn       = document.getElementById('closePolyBtn');
+  const undoBoundaryBtn    = document.getElementById('undoBoundaryBtn');
+  const clearBoundaryBtn   = document.getElementById('clearBoundaryBtn');
+
+  const geomPolyBtn        = document.getElementById('geomPolyBtn');
+  const geomPinBtn         = document.getElementById('geomPinBtn');
+  const featSep            = document.getElementById('featSep');
+  const finishFeatBtn      = document.getElementById('finishFeatBtn');
+  const undoFeatBtn        = document.getElementById('undoFeatBtn');
+  const cancelFeatBtn      = document.getElementById('cancelFeatBtn');
+  const toggleEditSavedBtn = document.getElementById('toggleEditSavedBtn');
+  const dropGpsPtBtn       = document.getElementById('dropGpsPtBtn');
+  const cancelScaleBtn     = document.getElementById('cancelScaleBtn');
+  const doneGeorefBtn      = document.getElementById('doneGeorefBtn');
+  const undoGcpBtn         = document.getElementById('undoGcpBtn');
+  const clearGcpBtn        = document.getElementById('clearGcpBtn');
+
+  const settingsDrawer     = document.getElementById('settingsDrawer');
+  const listDrawer         = document.getElementById('listDrawer');
+  const featuresListEl     = document.getElementById('featuresListContainer');
+
+  const colsIn             = document.getElementById('colsIn');
+  const rowsIn             = document.getElementById('rowsIn');
+  const alignIn            = document.getElementById('alignIn');
+  const dimIn              = document.getElementById('dimIn');
+  const subIn              = document.getElementById('subIn');
+  const showGridIn         = document.getElementById('showGridIn');
+  const filtRemIn          = document.getElementById('filtRemIn');
+  const filtRepIn          = document.getElementById('filtRepIn');
+  const filtModIn          = document.getElementById('filtModIn');
+  const filtAddIn          = document.getElementById('filtAddIn');
+  const filtPinIn          = document.getElementById('filtPinIn');
+  const showGcpIn          = document.getElementById('showGcpIn');
+  const georefInfoLbl      = document.getElementById('georefInfoLbl');
+  const scaleInfoLbl       = document.getElementById('scaleInfoLbl');
+
+  const lblCols            = document.getElementById('lblCols');
+  const lblRows            = document.getElementById('lblRows');
+  const lblAlign           = document.getElementById('lblAlign');
+  const lblDim             = document.getElementById('lblDim');
+  const lblSub             = document.getElementById('lblSub');
+  const lblShowGrid        = document.getElementById('lblShowGrid');
+  const lblLayersTitle     = document.getElementById('lblLayersTitle');
+  const lblFiltRem         = document.getElementById('lblFiltRem');
+  const lblFiltRep         = document.getElementById('lblFiltRep');
+  const lblFiltMod         = document.getElementById('lblFiltMod');
+  const lblFiltAdd         = document.getElementById('lblFiltAdd');
+  const lblFiltPin         = document.getElementById('lblFiltPin');
+  const lblShowGcp         = document.getElementById('lblShowGcp');
+  const lblGpsSectionTitle = document.getElementById('lblGpsSectionTitle');
+  const lblAiExportTitle   = document.getElementById('lblAiExportTitle');
+  const lblEmbedPhotos     = document.getElementById('lblEmbedPhotos');
+  const lblImportJson      = document.getElementById('lblImportJson');
+
+  const exportZipBtn       = document.getElementById('exportZipBtn');
+  const exportRefSheetBtn  = document.getElementById('exportRefSheetBtn');
+  const embedJsonPhotosIn  = document.getElementById('embedJsonPhotosIn');
+  const saveCropBtn        = document.getElementById('saveCropBtn');
+  const saveFullBtn        = document.getElementById('saveFullBtn');
+  const exportJsonBtn      = document.getElementById('exportJsonBtn');
+  const importJsonIn       = document.getElementById('importJsonIn');
+
+  const zoomInBtn          = document.getElementById('zoomInBtn');
+  const zoomOutBtn         = document.getElementById('zoomOutBtn');
+  const fitBtn             = document.getElementById('fitBtn');
+  const statusBar          = document.getElementById('statusBar');
+  const stage              = document.getElementById('stage');
+  const viewCanvas         = document.getElementById('viewCanvas');
+  const vctx               = viewCanvas.getContext('2d');
+  const toastEl            = document.getElementById('toastEl');
+
+  // Compass & GPS HUD refs
+  const compassHud         = document.getElementById('compassHud');
+  const compassDialGroup   = document.getElementById('compassDialGroup');
+  const compassReadout     = document.getElementById('compassReadout');
+  const gpsHudPill         = document.getElementById('gpsHudPill');
+
+  // Feature Modal refs
+  const featModal          = document.getElementById('featModal');
+  const modalTitle         = document.getElementById('modalTitle');
+  const modalIdBadge       = document.getElementById('modalIdBadge');
+  const modalStats         = document.getElementById('modalStats');
+  const lblOpType          = document.getElementById('lblOpType');
+  const typeBtnADD         = document.getElementById('typeBtnADD');
+  const typeBtnREP         = document.getElementById('typeBtnREP');
+  const typeBtnREM         = document.getElementById('typeBtnREM');
+  const typeBtnMOD         = document.getElementById('typeBtnMOD');
+  const lblFeatName        = document.getElementById('lblFeatName');
+  const featNameIn         = document.getElementById('featNameIn');
+  const lblFeatPhoto       = document.getElementById('lblFeatPhoto');
+  const featPhotoIn        = document.getElementById('featPhotoIn');
+  const lblPickPhotos      = document.getElementById('lblPickPhotos');
+  const photoFilePicker    = document.getElementById('photoFilePicker');
+  const photoHintLbl       = document.getElementById('photoHintLbl');
+  const modalThumbStrip    = document.getElementById('modalThumbStrip');
+  const singleNoteWrap     = document.getElementById('singleNoteWrap');
+  const singleNoteLbl      = document.getElementById('singleNoteLbl');
+  const featNotesIn        = document.getElementById('featNotesIn');
+  const repFieldsWrap      = document.getElementById('repFieldsWrap');
+  const lblRepRemove       = document.getElementById('lblRepRemove');
+  const repRemoveIn        = document.getElementById('repRemoveIn');
+  const lblRepAdd          = document.getElementById('lblRepAdd');
+  const repAddIn           = document.getElementById('repAddIn');
+  const modalSaveBtn       = document.getElementById('modalSaveBtn');
+  const modalResumeBtn     = document.getElementById('modalResumeBtn');
+  const modalDiscardBtn    = document.getElementById('modalDiscardBtn');
+  const typeBtns           = Array.from(document.querySelectorAll('.type-btn'));
+
+  // Coordinate / GCP Modal refs
+  const coordModal         = document.getElementById('coordModal');
+  const coordModalTitle    = document.getElementById('coordModalTitle');
+  const coordModalBadge    = document.getElementById('coordModalBadge');
+  const coordModalInfo     = document.getElementById('coordModalInfo');
+  const coordFetchGpsBtn   = document.getElementById('coordFetchGpsBtn');
+  const lblCoordQuickPaste = document.getElementById('lblCoordQuickPaste');
+  const coordQuickPasteIn  = document.getElementById('coordQuickPasteIn');
+  const lblCoordLat        = document.getElementById('lblCoordLat');
+  const coordLatIn         = document.getElementById('coordLatIn');
+  const lblCoordLon        = document.getElementById('lblCoordLon');
+  const coordLonIn         = document.getElementById('coordLonIn');
+  const coordLabelWrap     = document.getElementById('coordLabelWrap');
+  const lblCoordName       = document.getElementById('lblCoordName');
+  const coordNameIn        = document.getElementById('coordNameIn');
+  const coordConfirmBtn    = document.getElementById('coordConfirmBtn');
+  const coordCancelBtn     = document.getElementById('coordCancelBtn');
+
+  // Lightbox refs
+  const photoLightbox      = document.getElementById('photoLightbox');
+  const lightboxImg        = document.getElementById('lightboxImg');
+  const lightboxCap        = document.getElementById('lightboxCap');
+
+  // --- Feature styling & phase execution order ---
+  const TYPE_STYLES = {
+    REM: { order: 1, stroke: '#ef4444', fill: 'rgba(239, 68, 68, 0.22)', badge: '#fca5a5', dash: [8, 5] },
+    REP: { order: 2, stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.24)', badge: '#e9d5ff', dash: [10, 4, 3, 4] },
+    MOD: { order: 3, stroke: '#f59e0b', fill: 'rgba(245, 158, 11, 0.24)', badge: '#fde68a', dash: [] },
+    ADD: { order: 4, stroke: '#22c55e', fill: 'rgba(34, 197, 94, 0.24)', badge: '#86efac', dash: [] }
+  };
+
+  const CARDINALS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+  function degToCardinal(deg) {
+    const norm = ((deg % 360) + 360) % 360;
+    return CARDINALS[Math.round(norm / 45) % 8];
+  }
+
+  // --- App State ---
+  let img = null;
+  let mode = 'boundary';      // 'boundary' | 'feature' | 'pan' | 'scale' | 'georef'
+  let featGeom = 'polygon';   // 'polygon' | 'point'
+  let editSavedVertices = false;
+
+  // Village boundary
+  let points = [];
+  let closed = false;
+
+  // Features: { id, geometry, type, name, photoRef, photos: [{origName, dataUrl, width, height, sizeKB, bearing}], notes, removeNotes, addNotes, points }
+  let features = [];
+  let draftPoints = [];
+  let nextFeatNum = 1;
+  let editingFeatIndex = -1;
+  let modalGeom = 'polygon';
+  let modalSelectedType = 'ADD';
+  let modalDraftPhotos = [];
+  let isProcessingPhotos = false;
+
+  // Scale calibration
+  let scalePoints = [];
+  let metersPerPixel = null;
+
+  // Georeferencing (GCPs: [{x, y, lat, lon, label}]) & Live GPS/Compass state
+  let gcps = [];
+  let georefModel = null;
+  let coordModalMode = 'gcp'; // 'gcp' | 'manual_point'
+  let pendingGcpPixel = null;
+
+  let gpsActive = false;
+  let gpsWatchId = null;
+  let liveGps = null; // { lat, lon, accuracy, timestamp }
+
+  let compassActive = false;
+  let compassHeading = null; // degrees 0..359 clockwise from North
+  let compassGotEvent = false;
+  let compassFallbackTimer = null;
+
+  // Viewport transform
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+
+  // Pointer state
+  const activePointers = new Map();
+  let dragTarget = null;
+  let isPanning = false;
+  let downPos = null;
+  let panStart = null;
+  let movedDist = 0;
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+  let pinchStartMid = null;
+  let pinchStartPan = null;
+  let toastTimer = null;
+
+  // Auto-Save (IndexedDB + localStorage fallback) & Clean/Fullscreen state
+  let baseImageBlob = null;
+  let baseImageName = '';
+  let baseImageObjectUrl = null;
+  let pendingRestoredMeta = false;
+  let autosaveTimer = null;
+  let lastSavedTimeStr = '';
+  let lastSavedMode = 'idle'; // 'idle' | 'full' | 'lite' | 'error'
+  let cleanMode = false;
+  let hideCleanHudWidgets = false;
+
+  function showToast(msg, duration = 3400) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+  }
+
+  // --- Local Auto-Save Engine (IndexedDB primary + localStorage lite fallback) ---
+  const IDB_NAME = 'VillageSurveyAutoSaveDB';
+  const IDB_STORE = 'sessions';
+  const IDB_KEY = 'active';
+  const LS_LITE_KEY = 'village_survey_autosave_lite_v7';
+
+  function openAutoSaveDB() {
+    return new Promise((resolve, reject) => {
+      if (typeof indexedDB === 'undefined') { reject(new Error('No IDB')); return; }
+      try {
+        const req = indexedDB.open(IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(IDB_STORE)) {
+            db.createObjectStore(IDB_STORE, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('IDB open error'));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  async function idbPutRecord(record) {
+    const db = await openAutoSaveDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(record);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('IDB put error')); };
+    });
+  }
+
+  async function idbGetRecord() {
+    const db = await openAutoSaveDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); reject(req.error || new Error('IDB get error')); };
+    });
+  }
+
+  async function idbDeleteRecord() {
+    const db = await openAutoSaveDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(IDB_KEY);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); reject(tx.error || new Error('IDB delete error')); };
+    });
+  }
+
+  function buildSessionSnapshot(includePhotoData) {
+    return {
+      version: 7,
+      savedAt: Date.now(),
+      baseImageName: baseImageName || '',
+      points: points.map(p => ({ x: p.x, y: p.y })),
+      closed,
+      features: features.map(f => ({
+        id: f.id,
+        geometry: f.geometry,
+        type: f.type,
+        name: f.name || '',
+        photoRef: f.photoRef || '',
+        photos: includePhotoData ? (f.photos || []).map(ph => ({ ...ph })) : [],
+        notes: f.notes || '',
+        removeNotes: f.removeNotes || '',
+        addNotes: f.addNotes || '',
+        points: f.points.map(p => ({ x: p.x, y: p.y }))
+      })),
+      nextFeatNum,
+      gcps: gcps.map(g => ({ x: g.x, y: g.y, lat: g.lat, lon: g.lon, label: g.label || '' })),
+      metersPerPixel,
+      grid: {
+        cols: parseInt(colsIn.value, 10) || 6,
+        rows: parseInt(rowsIn.value, 10) || 4,
+        aligned: alignIn.checked,
+        dim: dimIn.checked,
+        sub: subIn.checked,
+        showGrid: showGridIn.checked
+      },
+      filters: {
+        rem: filtRemIn.checked,
+        rep: filtRepIn.checked,
+        mod: filtModIn.checked,
+        add: filtAddIn.checked,
+        pin: filtPinIn.checked,
+        gcp: showGcpIn.checked
+      },
+      mode: (mode === 'scale') ? 'feature' : mode,
+      featGeom
+    };
+  }
+
+  function formatNowTime() {
+    const d = new Date();
+    return [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2, '0')).join(':');
+  }
+
+  function updateAutosaveLabel() {
+    const L = t();
+    if (lastSavedMode === 'full') {
+      autosaveInfoLbl.textContent = L.autosaveSaved(lastSavedTimeStr);
+    } else if (lastSavedMode === 'lite') {
+      autosaveInfoLbl.textContent = L.autosaveLite(lastSavedTimeStr);
+    } else if (lastSavedMode === 'error') {
+      autosaveInfoLbl.textContent = L.autosaveFailed;
+    } else {
+      autosaveInfoLbl.textContent = L.autosaveIdle;
+    }
+  }
+
+  async function performAutoSaveNow() {
+    if (!img && points.length === 0 && features.length === 0 && gcps.length === 0) return;
+    const fullState = buildSessionSnapshot(true);
+    const timeStr = formatNowTime();
+
+    // Always write lightweight fallback to localStorage (without imageBlob & without heavy Base64 photos)
+    let lsOk = false;
+    try {
+      const liteState = buildSessionSnapshot(false);
+      localStorage.setItem(LS_LITE_KEY, JSON.stringify(liteState));
+      lsOk = true;
+    } catch {}
+
+    // Primary full persistence in IndexedDB (stores base map Blob + all attached photos)
+    try {
+      await idbPutRecord({
+        id: IDB_KEY,
+        state: fullState,
+        imageBlob: baseImageBlob || null
+      });
+      lastSavedMode = 'full';
+      lastSavedTimeStr = timeStr;
+    } catch {
+      lastSavedMode = lsOk ? 'lite' : 'error';
+      lastSavedTimeStr = timeStr;
+    }
+    updateAutosaveLabel();
+  }
+
+  function scheduleAutoSave(immediate = false) {
+    if (autosaveTimer) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+    if (immediate) {
+      performAutoSaveNow();
+    } else {
+      autosaveTimer = setTimeout(() => {
+        autosaveTimer = null;
+        performAutoSaveNow();
+      }, 350);
+    }
+  }
+
+  function applyRestoredStateData(state) {
+    if (!state || typeof state !== 'object') return false;
+    if (Array.isArray(state.points)) {
+      points = state.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+      closed = !!state.closed && points.length >= 3;
+    }
+    if (Array.isArray(state.gcps)) {
+      gcps = state.gcps
+        .filter(g => !isNaN(Number(g.x)) && !isNaN(Number(g.y)) && !isNaN(Number(g.lat)) && !isNaN(Number(g.lon)))
+        .map(g => ({ x: Number(g.x), y: Number(g.y), lat: Number(g.lat), lon: Number(g.lon), label: g.label || '' }));
+      recomputeGeorefModel();
+    }
+    if (typeof state.metersPerPixel === 'number' && state.metersPerPixel > 0) {
+      metersPerPixel = state.metersPerPixel;
+    }
+    if (Array.isArray(state.features)) {
+      features = state.features
+        .filter(item => Array.isArray(item.points) && item.points.length >= 1)
+        .map((item, idx) => ({
+          id: item.id || formatId(idx + 1),
+          geometry: (item.geometry === 'point' || item.points.length === 1) ? 'point' : 'polygon',
+          type: TYPE_STYLES[item.type] ? item.type : 'ADD',
+          name: item.name || '',
+          photoRef: item.photoRef || '',
+          photos: Array.isArray(item.photos) ? item.photos : [],
+          notes: item.notes || '',
+          removeNotes: item.removeNotes || '',
+          addNotes: item.addNotes || '',
+          points: item.points.map(p => ({ x: Number(p.x), y: Number(p.y) }))
+        }));
+    }
+    if (typeof state.nextFeatNum === 'number' && state.nextFeatNum >= 1) {
+      nextFeatNum = state.nextFeatNum;
+    } else {
+      let maxN = features.length;
+      for (const item of features) {
+        const m = /^ID-(\d+)$/.exec(item.id);
+        if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+      }
+      nextFeatNum = maxN + 1;
+    }
+    if (state.grid) {
+      if (state.grid.cols) colsIn.value = clamp(parseInt(state.grid.cols, 10), 2, 20);
+      if (state.grid.rows) rowsIn.value = clamp(parseInt(state.grid.rows, 10), 2, 20);
+      if (typeof state.grid.aligned === 'boolean') alignIn.checked = state.grid.aligned;
+      if (typeof state.grid.dim === 'boolean') dimIn.checked = state.grid.dim;
+      if (typeof state.grid.sub === 'boolean') subIn.checked = state.grid.sub;
+      if (typeof state.grid.showGrid === 'boolean') showGridIn.checked = state.grid.showGrid;
+    }
+    if (state.filters) {
+      if (typeof state.filters.rem === 'boolean') filtRemIn.checked = state.filters.rem;
+      if (typeof state.filters.rep === 'boolean') filtRepIn.checked = state.filters.rep;
+      if (typeof state.filters.mod === 'boolean') filtModIn.checked = state.filters.mod;
+      if (typeof state.filters.add === 'boolean') filtAddIn.checked = state.filters.add;
+      if (typeof state.filters.pin === 'boolean') filtPinIn.checked = state.filters.pin;
+      if (typeof state.filters.gcp === 'boolean') showGcpIn.checked = state.filters.gcp;
+    }
+    if (state.mode && ['boundary', 'feature', 'pan', 'georef'].includes(state.mode)) {
+      mode = state.mode;
+    }
+    if (state.featGeom === 'point' || state.featGeom === 'polygon') {
+      featGeom = state.featGeom;
+    }
+    baseImageName = state.baseImageName || '';
+    return true;
+  }
+
+  async function restoreAutoSaveOnBoot() {
+    let rec = null;
+    try {
+      rec = await idbGetRecord();
+    } catch {}
+
+    if (rec && rec.state) {
+      const hasData = (rec.imageBlob != null) ||
+        (rec.state.points && rec.state.points.length > 0) ||
+        (rec.state.features && rec.state.features.length > 0) ||
+        (rec.state.gcps && rec.state.gcps.length > 0);
+      if (!hasData) return;
+
+      applyRestoredStateData(rec.state);
+      const d = rec.state.savedAt ? new Date(rec.state.savedAt) : new Date();
+      lastSavedTimeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2, '0')).join(':');
+      lastSavedMode = 'full';
+
+      if (rec.imageBlob instanceof Blob) {
+        baseImageBlob = rec.imageBlob;
+        if (baseImageObjectUrl) URL.revokeObjectURL(baseImageObjectUrl);
+        baseImageObjectUrl = URL.createObjectURL(rec.imageBlob);
+        const loaded = new Image();
+        loaded.onload = () => {
+          img = loaded;
+          pendingRestoredMeta = false;
+          resizeCanvas();
+          fitImage();
+          renderFeaturesList();
+          updateUI();
+          updateAutosaveLabel();
+          showToast(t().toastRestoredFull(features.length, gcps.length), 4200);
+        };
+        loaded.src = baseImageObjectUrl;
+      } else {
+        pendingRestoredMeta = true;
+        renderFeaturesList();
+        updateUI();
+        updateAutosaveLabel();
+        showToast(t().toastRestoredMeta(features.length, gcps.length), 5000);
+      }
+      return;
+    }
+
+    // Fallback to localStorage lite copy
+    try {
+      const raw = localStorage.getItem(LS_LITE_KEY);
+      if (!raw) return;
+      const lite = JSON.parse(raw);
+      const hasData = (lite.points && lite.points.length > 0) ||
+        (lite.features && lite.features.length > 0) ||
+        (lite.gcps && lite.gcps.length > 0);
+      if (!hasData) return;
+      applyRestoredStateData(lite);
+      pendingRestoredMeta = true;
+      const d = lite.savedAt ? new Date(lite.savedAt) : new Date();
+      lastSavedTimeStr = [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2, '0')).join(':');
+      lastSavedMode = 'lite';
+      renderFeaturesList();
+      updateUI();
+      updateAutosaveLabel();
+      showToast(t().toastRestoredMeta(features.length, gcps.length), 5000);
+    } catch {}
+  }
+
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') scheduleAutoSave(true);
+  });
+  window.addEventListener('pagehide', () => scheduleAutoSave(true));
+
+  // --- Clean Survey Mode (Hide/Show Controls) & Fullscreen ---
+  function isFullscreenActive() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  function updateFullscreenButtons() {
+    const active = isFullscreenActive();
+    const icon = active ? '🗗' : '⛶';
+    fullscreenBtn.textContent = icon;
+    cleanFsBtn.textContent = icon;
+    fullscreenBtn.className = active ? 'btn-active' : '';
+    cleanFsBtn.className = active ? 'btn-active' : '';
+  }
+
+  async function toggleFullscreen() {
+    const docEl = document.documentElement;
+    try {
+      if (isFullscreenActive()) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else {
+        if (docEl.requestFullscreen) await docEl.requestFullscreen();
+        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+        else throw new Error('Fullscreen unsupported');
+      }
+    } catch {
+      // Fallback: activate Clean Mode when Fullscreen API is unavailable (e.g. iOS Safari)
+      if (!cleanMode && img) setCleanMode(true);
+      showToast(t().toastFsUnavailable, 3800);
+    }
+    updateFullscreenButtons();
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    updateFullscreenButtons();
+    setTimeout(resizeCanvas, 60);
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    updateFullscreenButtons();
+    setTimeout(resizeCanvas, 60);
+  });
+
+  function setCleanMode(enable) {
+    if (!img && enable) return;
+    const topBefore = stage.getBoundingClientRect().top;
+    cleanMode = !!enable;
+    if (cleanMode) {
+      settingsDrawer.classList.remove('open');
+      listDrawer.classList.remove('open');
+      document.body.classList.add('clean-mode');
+      showToast(t().toastCleanModeOn, 2600);
+    } else {
+      document.body.classList.remove('clean-mode');
+      document.body.classList.remove('hide-hud');
+      hideCleanHudWidgets = false;
+    }
+    const topAfter = stage.getBoundingClientRect().top;
+    // Keep map anchored in the exact same screen position when toolbar disappears/reappears
+    panY += (topBefore - topAfter);
+    resizeCanvas();
+    updateUI();
+  }
+
+  function updateCleanHud() {
+    const L = t();
+    exitCleanBtn.textContent = L.exitCleanBtn;
+    cleanToggleHudBtn.textContent = hideCleanHudWidgets ? L.cleanHudShow : L.cleanHudHide;
+    cleanToggleHudBtn.className = hideCleanHudWidgets ? 'btn-active-amber' : '';
+
+    if (mode === 'boundary') {
+      cleanModeBadge.textContent = L.cleanBadgeBoundary(points.length);
+      cleanGpsDropBtn.style.display = 'inline-flex';
+      cleanUndoBtn.style.display = points.length > 0 ? 'inline-flex' : 'none';
+      cleanFinishBtn.style.display = (!closed && points.length >= 3) ? 'inline-flex' : 'none';
+    } else if (mode === 'feature') {
+      cleanModeBadge.textContent = (featGeom === 'point')
+        ? L.cleanBadgePin
+        : L.cleanBadgePoly(draftPoints.length);
+      cleanGpsDropBtn.style.display = editSavedVertices ? 'none' : 'inline-flex';
+      cleanUndoBtn.style.display = (featGeom === 'polygon' && draftPoints.length > 0) ? 'inline-flex' : 'none';
+      cleanFinishBtn.style.display = (featGeom === 'polygon' && draftPoints.length >= 3) ? 'inline-flex' : 'none';
+    } else if (mode === 'georef') {
+      cleanModeBadge.textContent = L.cleanBadgeGeoref(gcps.length);
+      cleanGpsDropBtn.style.display = 'none';
+      cleanUndoBtn.style.display = gcps.length > 0 ? 'inline-flex' : 'none';
+      cleanFinishBtn.style.display = 'inline-flex';
+    } else if (mode === 'scale') {
+      cleanModeBadge.textContent = L.cleanBadgeScale;
+      cleanGpsDropBtn.style.display = 'none';
+      cleanUndoBtn.style.display = 'none';
+      cleanFinishBtn.style.display = 'none';
+    } else {
+      cleanModeBadge.textContent = L.cleanBadgePan;
+      cleanGpsDropBtn.style.display = 'none';
+      cleanUndoBtn.style.display = 'none';
+      cleanFinishBtn.style.display = 'none';
+    }
+  }
+
+  cleanModeBtn.onclick = () => setCleanMode(!cleanMode);
+  exitCleanBtn.onclick = () => setCleanMode(false);
+  fullscreenBtn.onclick = toggleFullscreen;
+  cleanFsBtn.onclick = toggleFullscreen;
+  cleanToggleHudBtn.onclick = () => {
+    hideCleanHudWidgets = !hideCleanHudWidgets;
+    document.body.classList.toggle('hide-hud', hideCleanHudWidgets);
+    updateCleanHud();
+  };
+  cleanGpsDropBtn.onclick = () => dropGpsPtBtn.click();
+  cleanUndoBtn.onclick = () => {
+    if (mode === 'boundary') undoBoundaryBtn.click();
+    else if (mode === 'feature') undoFeatBtn.click();
+    else if (mode === 'georef') undoGcpBtn.click();
+  };
+  cleanFinishBtn.onclick = () => {
+    if (mode === 'boundary') closePolyBtn.click();
+    else if (mode === 'feature') finishFeatBtn.click();
+    else if (mode === 'georef') doneGeorefBtn.click();
+  };
+
+  clearAutosaveBtn.onclick = async () => {
+    if (!confirm(t().confirmClearAutosave)) return;
+    try { await idbDeleteRecord(); } catch {}
+    try { localStorage.removeItem(LS_LITE_KEY); } catch {}
+    points = [];
+    closed = false;
+    features = [];
+    draftPoints = [];
+    nextFeatNum = 1;
+    gcps = [];
+    georefModel = null;
+    metersPerPixel = null;
+    scalePoints = [];
+    editSavedVertices = false;
+    pendingRestoredMeta = false;
+    lastSavedMode = 'idle';
+    lastSavedTimeStr = '';
+    if (cleanMode) setCleanMode(false);
+    renderFeaturesList();
+    updateUI();
+    updateAutosaveLabel();
+    renderView();
+    showToast(t().toastAutosaveCleared, 3000);
+  };
+
+
+  function isFeatureVisible(feat) {
+    if (feat.geometry === 'point' && !filtPinIn.checked) return false;
+    if (feat.type === 'REM') return filtRemIn.checked;
+    if (feat.type === 'REP') return filtRepIn.checked;
+    if (feat.type === 'MOD') return filtModIn.checked;
+    return filtAddIn.checked;
+  }
+
+  // --- Verified 2D Georeferencing Solver (2pt Similarity / 3+pt Least-Squares Affine) ---
+  function solve3x3(A, b) {
+    const M = A.map((row, i) => [...row, b[i]]);
+    for (let col = 0; col < 3; col++) {
+      let piv = col;
+      for (let r = col + 1; r < 3; r++) {
+        if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+      }
+      if (Math.abs(M[piv][col]) < 1e-12) return null;
+      [M[col], M[piv]] = [M[piv], M[col]];
+      const div = M[col][col];
+      for (let j = col; j < 4; j++) M[col][j] /= div;
+      for (let r = 0; r < 3; r++) {
+        if (r === col) continue;
+        const f = M[r][col];
+        for (let j = col; j < 4; j++) M[r][j] -= f * M[col][j];
+      }
+    }
+    return [M[0][3], M[1][3], M[2][3]];
+  }
+
+  function recomputeGeorefModel() {
+    if (gcps.length < 2) {
+      georefModel = null;
+      return;
+    }
+    const lat0 = gcps.reduce((s, g) => s + g.lat, 0) / gcps.length;
+    const lon0 = gcps.reduce((s, g) => s + g.lon, 0) / gcps.length;
+    const mPerDegLat = 111132.954;
+    const mPerDegLon = 111319.488 * Math.cos(lat0 * Math.PI / 180);
+    const pts = gcps.map(g => ({
+      e: (g.lon - lon0) * mPerDegLon,
+      n: (g.lat - lat0) * mPerDegLat,
+      x: g.x,
+      y: g.y
+    }));
+
+    if (gcps.length === 2) {
+      const p0 = pts[0], p1 = pts[1];
+      const du = p1.e - p0.e;
+      const dv = (-p1.n) - (-p0.n);
+      const dx = p1.x - p0.x;
+      const dy = p1.y - p0.y;
+      const den = du * du + dv * dv;
+      if (den < 1e-6) { georefModel = null; return; }
+      const p = (dx * du + dy * dv) / den;
+      const q = (dy * du - dx * dv) / den;
+      const cx = p0.x - (p * p0.e + q * p0.n);
+      const cy = p0.y - (q * p0.e - p * p0.n);
+      const pxPerM = Math.hypot(p, q);
+      georefModel = {
+        mode: 'similarity_2pt',
+        lat0, lon0, mPerDegLat, mPerDegLon,
+        ax: p, bx: q, cx,
+        ay: q, by: -p, cy,
+        metersPerPx: pxPerM > 1e-9 ? (1 / pxPerM) : null,
+        rmsPx: 0
+      };
+      if (!metersPerPixel && georefModel.metersPerPx) metersPerPixel = georefModel.metersPerPx;
+      return;
+    }
+
+    // 3+ GCPs: Least-squares 2D Affine
+    const ATA = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    const ATbx = [0, 0, 0];
+    const ATby = [0, 0, 0];
+    for (const pt of pts) {
+      const row = [pt.e, pt.n, 1];
+      for (let r = 0; r < 3; r++) {
+        ATbx[r] += row[r] * pt.x;
+        ATby[r] += row[r] * pt.y;
+        for (let c = 0; c < 3; c++) ATA[r][c] += row[r] * row[c];
+      }
+    }
+    const wx = solve3x3(ATA, ATbx);
+    const wy = solve3x3(ATA, ATby);
+    if (!wx || !wy) { georefModel = null; return; }
+
+    let sqErr = 0;
+    for (const pt of pts) {
+      const px = wx[0] * pt.e + wx[1] * pt.n + wx[2];
+      const py = wy[0] * pt.e + wy[1] * pt.n + wy[2];
+      sqErr += (px - pt.x) ** 2 + (py - pt.y) ** 2;
+    }
+    const rmsPx = Math.sqrt(sqErr / pts.length);
+    const avgPxPerM = 0.5 * (Math.hypot(wx[0], wy[0]) + Math.hypot(wx[1], wy[1]));
+    georefModel = {
+      mode: 'affine_3pt',
+      lat0, lon0, mPerDegLat, mPerDegLon,
+      ax: wx[0], bx: wx[1], cx: wx[2],
+      ay: wy[0], by: wy[1], cy: wy[2],
+      metersPerPx: avgPxPerM > 1e-9 ? (1 / avgPxPerM) : null,
+      rmsPx
+    };
+    if (georefModel.metersPerPx) metersPerPixel = georefModel.metersPerPx;
+  }
+
+  function latLonToImageXY(lat, lon) {
+    if (!georefModel) return null;
+    const e = (lon - georefModel.lon0) * georefModel.mPerDegLon;
+    const n = (lat - georefModel.lat0) * georefModel.mPerDegLat;
+    return {
+      x: georefModel.ax * e + georefModel.bx * n + georefModel.cx,
+      y: georefModel.ay * e + georefModel.by * n + georefModel.cy
+    };
+  }
+
+  function imageXYToLatLon(x, y) {
+    if (!georefModel) return null;
+    const det = georefModel.ax * georefModel.by - georefModel.bx * georefModel.ay;
+    if (Math.abs(det) < 1e-12) return null;
+    const dx = x - georefModel.cx;
+    const dy = y - georefModel.cy;
+    const e = (georefModel.by * dx - georefModel.bx * dy) / det;
+    const n = (-georefModel.ay * dx + georefModel.ax * dy) / det;
+    return {
+      lat: Number((georefModel.lat0 + n / georefModel.mPerDegLat).toFixed(7)),
+      lon: Number((georefModel.lon0 + e / georefModel.mPerDegLon).toFixed(7))
+    };
+  }
+
+  // --- Live Compass Sensor ---
+  function handleOrientationEvent(ev) {
+    let heading = null;
+    if (typeof ev.webkitCompassHeading === 'number' && !isNaN(ev.webkitCompassHeading)) {
+      heading = ev.webkitCompassHeading;
+    } else if (typeof ev.alpha === 'number' && !isNaN(ev.alpha)) {
+      // Standard Android absolute alpha is counter-clockwise from North
+      heading = (360 - ev.alpha) % 360;
+    }
+    if (heading === null) return;
+    compassGotEvent = true;
+    compassHeading = ((heading % 360) + 360) % 360;
+    updateCompassHud();
+    if (gpsActive && georefModel) renderView();
+  }
+
+  function updateCompassHud() {
+    if (!compassActive) {
+      compassHud.classList.add('inactive');
+      compassDialGroup.setAttribute('transform', 'rotate(0 50 50)');
+      compassReadout.textContent = 'OFF';
+      compassToggleBtn.className = '';
+      return;
+    }
+    compassHud.classList.remove('inactive');
+    compassToggleBtn.className = 'btn-gps-on';
+    if (compassHeading === null) {
+      compassReadout.textContent = '...';
+      return;
+    }
+    const deg = Math.round(compassHeading) % 360;
+    const card = degToCardinal(deg);
+    // Rotate dial opposite to heading so North arrow always points toward magnetic North
+    compassDialGroup.setAttribute('transform', `rotate(${(-compassHeading).toFixed(1)} 50 50)`);
+    compassReadout.textContent = `${String(deg).padStart(3, '0')}° ${card}`;
+  }
+
+  async function toggleCompass() {
+    if (compassActive) {
+      window.removeEventListener('deviceorientationabsolute', handleOrientationEvent, true);
+      window.removeEventListener('deviceorientation', handleOrientationEvent, true);
+      if (compassFallbackTimer) clearTimeout(compassFallbackTimer);
+      compassActive = false;
+      compassHeading = null;
+      compassGotEvent = false;
+      updateCompassHud();
+      showToast(t().toastCompassOff, 2200);
+      return;
+    }
+    if (typeof window.DeviceOrientationEvent === 'undefined') {
+      showToast(t().toastCompassNoSensor, 4500);
+      return;
+    }
+    try {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const perm = await DeviceOrientationEvent.requestPermission();
+        if (perm !== 'granted') {
+          showToast(t().toastCompassNoSensor, 4500);
+          return;
+        }
+      }
+    } catch {
+      showToast(t().toastCompassNoSensor, 4500);
+      return;
+    }
+    compassActive = true;
+    compassGotEvent = false;
+    window.addEventListener('deviceorientationabsolute', handleOrientationEvent, true);
+    window.addEventListener('deviceorientation', handleOrientationEvent, true);
+    updateCompassHud();
+    showToast(t().toastCompassOn, 2200);
+
+    if (compassFallbackTimer) clearTimeout(compassFallbackTimer);
+    compassFallbackTimer = setTimeout(() => {
+      if (compassActive && !compassGotEvent) {
+        showToast(t().toastCompassNoSensor, 4800);
+      }
+    }, 2500);
+  }
+
+  compassToggleBtn.onclick = toggleCompass;
+  compassHud.onclick = toggleCompass;
+
+  // --- Live GPS Tracking ---
+  function updateGpsHud() {
+    if (!gpsActive) {
+      gpsToggleBtn.className = '';
+      gpsHudPill.style.display = 'none';
+      return;
+    }
+    gpsToggleBtn.className = 'btn-gps-on';
+    gpsHudPill.style.display = 'block';
+    if (!liveGps) {
+      gpsHudPill.className = 'gps-pill warn';
+      gpsHudPill.textContent = '🛰️ Waiting GPS...';
+      return;
+    }
+    const acc = Math.round(liveGps.accuracy);
+    gpsHudPill.className = 'gps-pill ' + (acc <= 8 ? 'good' : (acc <= 20 ? 'warn' : 'err'));
+    gpsHudPill.innerHTML = `🛰️ ±${acc}m<br>${liveGps.lat.toFixed(5)}, ${liveGps.lon.toFixed(5)}`;
+  }
+
+  function startGpsWatch() {
+    if (!('geolocation' in navigator)) {
+      showToast(t().toastGpsError('Geolocation unsupported'), 4200);
+      return;
+    }
+    gpsActive = true;
+    updateGpsHud();
+    showToast(t().toastGpsOn, 2200);
+    gpsWatchId = navigator.geolocation.watchPosition(
+      pos => {
+        liveGps = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy || 99,
+          timestamp: pos.timestamp
+        };
+        updateGpsHud();
+        renderView();
+      },
+      err => {
+        gpsHudPill.className = 'gps-pill err';
+        gpsHudPill.textContent = `🛰️ ERR: ${err.code}`;
+        showToast(t().toastGpsError(err.message || `Code ${err.code}`), 4500);
+      },
+      { enableHighAccuracy: true, maximumAge: 1500, timeout: 15000 }
+    );
+  }
+
+  function stopGpsWatch() {
+    if (gpsWatchId !== null && 'geolocation' in navigator) {
+      navigator.geolocation.clearWatch(gpsWatchId);
+    }
+    gpsWatchId = null;
+    gpsActive = false;
+    liveGps = null;
+    updateGpsHud();
+    renderView();
+    showToast(t().toastGpsOff, 2000);
+  }
+
+  gpsToggleBtn.onclick = () => {
+    if (gpsActive) stopGpsWatch();
+    else startGpsWatch();
+  };
+
+  // --- Drop Point by Lat/Lon onto active Boundary / Polygon / Pin ---
+  function dropLatLonPoint(lat, lon, accuracyM) {
+    if (!img) return false;
+    if (!georefModel) {
+      listDrawer.classList.remove('open');
+      settingsDrawer.classList.add('open');
+      showToast(t().toastNeedGeoref, 4500);
+      return false;
+    }
+    const xy = latLonToImageXY(lat, lon);
+    if (!xy) return false;
+    if (xy.x < -20 || xy.x > img.naturalWidth + 20 || xy.y < -20 || xy.y > img.naturalHeight + 20) {
+      showToast(t().toastGpsOutOfBounds, 4500);
+      return false;
+    }
+    const pt = {
+      x: clamp(xy.x, 0, img.naturalWidth),
+      y: clamp(xy.y, 0, img.naturalHeight)
+    };
+
+    if (mode === 'boundary') {
+      if (closed) closed = false;
+      points.push(pt);
+    } else if (mode === 'feature') {
+      editSavedVertices = false;
+      if (featGeom === 'point') {
+        draftPoints = [pt];
+        openFeatureModal(-1, 'point');
+      } else {
+        modalGeom = 'polygon';
+        draftPoints.push(pt);
+      }
+    } else {
+      // Switch to feature mode and drop point
+      mode = 'feature';
+      featGeom = 'polygon';
+      modalGeom = 'polygon';
+      draftPoints.push(pt);
+    }
+
+    // Pan smoothly to show the newly added GPS point
+    const rect = stage.getBoundingClientRect();
+    panX = rect.width / 2 - pt.x * zoom;
+    panY = rect.height / 2 - pt.y * zoom;
+
+    updateUI();
+    renderView();
+    scheduleAutoSave();
+    if (typeof accuracyM === 'number') {
+      showToast(t().toastGpsDropped(Math.round(accuracyM)), 3400);
+    }
+    return true;
+  }
+
+  dropGpsPtBtn.onclick = () => {
+    if (!img) return;
+    if (!georefModel) {
+      listDrawer.classList.remove('open');
+      settingsDrawer.classList.add('open');
+      showToast(t().toastNeedGeoref, 4500);
+      return;
+    }
+    if (!gpsActive) startGpsWatch();
+    if (liveGps) {
+      dropLatLonPoint(liveGps.lat, liveGps.lon, liveGps.accuracy);
+      return;
+    }
+    // Try single high-accuracy shot immediately
+    if ('geolocation' in navigator) {
+      showToast(t().coordFetchingGps, 2500);
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          liveGps = {
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            accuracy: pos.coords.accuracy || 99,
+            timestamp: pos.timestamp
+          };
+          updateGpsHud();
+          dropLatLonPoint(liveGps.lat, liveGps.lon, liveGps.accuracy);
+        },
+        () => showToast(t().toastNoGpsFix, 4500),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      showToast(t().toastNoGpsFix, 4500);
+    }
+  };
+
+  // --- Coordinate / GCP Modal Logic ---
+  function openCoordModal(kind, pixelPt) {
+    const L = t();
+    coordModalMode = kind;
+    pendingGcpPixel = pixelPt || null;
+    coordQuickPasteIn.value = '';
+    coordLatIn.value = liveGps ? liveGps.lat.toFixed(7) : '';
+    coordLonIn.value = liveGps ? liveGps.lon.toFixed(7) : '';
+    coordNameIn.value = '';
+
+    if (kind === 'gcp') {
+      coordModalTitle.textContent = L.coordTitleGcp;
+      coordModalBadge.textContent = `GCP-${gcps.length + 1}`;
+      coordModalInfo.textContent = L.coordInfoGcp(pixelPt.x, pixelPt.y);
+      coordLabelWrap.style.display = 'block';
+      coordConfirmBtn.textContent = L.coordConfirmGcp;
+    } else {
+      coordModalTitle.textContent = L.coordTitleManualPt;
+      coordModalBadge.textContent = 'LAT/LON';
+      coordModalInfo.textContent = L.coordInfoManual;
+      coordLabelWrap.style.display = 'none';
+      coordConfirmBtn.textContent = L.coordConfirmPt;
+    }
+    coordFetchGpsBtn.textContent = L.coordFetchGps;
+    coordModal.classList.add('open');
+  }
+
+  coordQuickPasteIn.addEventListener('input', () => {
+    const m = coordQuickPasteIn.value.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]+\s*(-?\d+(?:\.\d+)?)/);
+    if (m) {
+      coordLatIn.value = m[1];
+      coordLonIn.value = m[2];
+    }
+  });
+
+  coordFetchGpsBtn.onclick = () => {
+    const L = t();
+    if (!('geolocation' in navigator)) {
+      showToast(L.toastNoGpsFix, 4000);
+      return;
+    }
+    coordFetchGpsBtn.disabled = true;
+    coordFetchGpsBtn.textContent = L.coordFetchingGps;
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        liveGps = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          accuracy: pos.coords.accuracy || 99,
+          timestamp: pos.timestamp
+        };
+        coordLatIn.value = liveGps.lat.toFixed(7);
+        coordLonIn.value = liveGps.lon.toFixed(7);
+        updateGpsHud();
+        coordFetchGpsBtn.disabled = false;
+        coordFetchGpsBtn.textContent = L.coordFetchGps;
+        showToast(`🛰️ ±${Math.round(liveGps.accuracy)}m`, 2200);
+      },
+      err => {
+        coordFetchGpsBtn.disabled = false;
+        coordFetchGpsBtn.textContent = L.coordFetchGps;
+        showToast(L.toastGpsError(err.message || `Code ${err.code}`), 4200);
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  };
+
+  coordConfirmBtn.onclick = () => {
+    const lat = parseFloat(coordLatIn.value.replace(',', '.').trim());
+    const lon = parseFloat(coordLonIn.value.replace(',', '.').trim());
+    if (isNaN(lat) || isNaN(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      showToast(t().toastInvalidCoords, 3500);
+      return;
+    }
+    if (coordModalMode === 'gcp' && pendingGcpPixel) {
+      const label = coordNameIn.value.trim() || `GCP-${gcps.length + 1}`;
+      gcps.push({ x: pendingGcpPixel.x, y: pendingGcpPixel.y, lat, lon, label });
+      recomputeGeorefModel();
+      coordModal.classList.remove('open');
+      pendingGcpPixel = null;
+      renderFeaturesList();
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+      showToast(t().toastGcpAdded(gcps.length), 3200);
+    } else {
+      coordModal.classList.remove('open');
+      dropLatLonPoint(lat, lon, null);
+    }
+  };
+
+  coordCancelBtn.onclick = () => {
+    coordModal.classList.remove('open');
+    pendingGcpPixel = null;
+  };
+
+  manualCoordPtBtn.onclick = () => {
+    if (!img) return;
+    if (!georefModel) {
+      showToast(t().toastNeedGeoref, 4000);
+      return;
+    }
+    settingsDrawer.classList.remove('open');
+    if (mode !== 'boundary' && mode !== 'feature') mode = 'feature';
+    openCoordModal('manual_point', null);
+  };
+
+  // --- Lightbox ---
+  function openLightbox(dataUrl, caption) {
+    lightboxImg.src = dataUrl;
+    lightboxCap.textContent = caption || '';
+    photoLightbox.classList.add('open');
+  }
+  photoLightbox.onclick = () => photoLightbox.classList.remove('open');
+
+  // --- Photo compression helper ---
+  function compressImageFile(file, maxEdge = 1024, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('File read failed'));
+      reader.onload = ev => {
+        const im = new Image();
+        im.onerror = () => reject(new Error('Image decode failed'));
+        im.onload = () => {
+          let w = im.naturalWidth;
+          let h = im.naturalHeight;
+          const longest = Math.max(w, h);
+          if (longest > maxEdge) {
+            const sc = maxEdge / longest;
+            w = Math.max(1, Math.round(w * sc));
+            h = Math.max(1, Math.round(h * sc));
+          }
+          const c = document.createElement('canvas');
+          c.width = w;
+          c.height = h;
+          const cx = c.getContext('2d');
+          cx.fillStyle = '#000000';
+          cx.fillRect(0, 0, w, h);
+          cx.drawImage(im, 0, 0, w, h);
+          const dataUrl = c.toDataURL('image/jpeg', quality);
+          const approxBytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+          // Auto-tag live compass bearing if active
+          let initBearing = '';
+          if (compassActive && compassHeading !== null) {
+            const d = Math.round(compassHeading) % 360;
+            initBearing = `${d}° ${degToCardinal(d)}`;
+          }
+          resolve({
+            origName: file.name || 'photo.jpg',
+            dataUrl,
+            width: w,
+            height: h,
+            sizeKB: Math.max(1, Math.round(approxBytes / 1024)),
+            bearing: initBearing
+          });
+        };
+        im.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function sanitizeFilename(name) {
+    const base = (name || 'photo').replace(/\.[^.]+$/, '');
+    const clean = base.replace(/[\\/:*?"<>|\s]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+    return clean || 'photo';
+  }
+
+  function buildPhotoExportPath(featId, photoIdx, origName) {
+    return `photos/${featId}_${photoIdx + 1}_${sanitizeFilename(origName)}.jpg`;
+  }
+
+  function dataUrlToUint8Array(dataUrl) {
+    const idx = dataUrl.indexOf(',');
+    const b64 = idx >= 0 ? dataUrl.slice(idx + 1) : dataUrl;
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function canvasToPngUint8Array(canvas) {
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        if (!blob) { resolve(null); return; }
+        const r = new FileReader();
+        r.onload = () => resolve(new Uint8Array(r.result));
+        r.readAsArrayBuffer(blob);
+      }, 'image/png');
+    });
+  }
+
+  function loadImageFromUrl(url) {
+    return new Promise(resolve => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => resolve(null);
+      im.src = url;
+    });
+  }
+
+  // --- Zero-dependency Pure-JS STORE ZIP Builder ---
+  const CRC_TABLE = (() => {
+    const tbl = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      tbl[i] = c >>> 0;
+    }
+    return tbl;
+  })();
+
+  function crc32Bytes(u8) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < u8.length; i++) {
+      c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function buildZipBlob(entries) {
+    const enc = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    for (const entry of entries) {
+      const nameBytes = enc.encode(entry.name);
+      const data = (entry.data instanceof Uint8Array) ? entry.data : enc.encode(String(entry.data));
+      const crc = crc32Bytes(data);
+      const size = data.length;
+
+      const lh = new ArrayBuffer(30);
+      const lv = new DataView(lh);
+      lv.setUint32(0, 0x04034b50, true);
+      lv.setUint16(4, 20, true);
+      lv.setUint16(6, 0x0800, true);
+      lv.setUint16(8, 0, true);
+      lv.setUint16(10, 0, true);
+      lv.setUint16(12, 0, true);
+      lv.setUint32(14, crc, true);
+      lv.setUint32(18, size, true);
+      lv.setUint32(22, size, true);
+      lv.setUint16(26, nameBytes.length, true);
+      lv.setUint16(28, 0, true);
+      localParts.push(new Uint8Array(lh), nameBytes, data);
+
+      const ch = new ArrayBuffer(46);
+      const cv = new DataView(ch);
+      cv.setUint32(0, 0x02014b50, true);
+      cv.setUint16(4, 20, true);
+      cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0x0800, true);
+      cv.setUint16(10, 0, true);
+      cv.setUint16(12, 0, true);
+      cv.setUint16(14, 0, true);
+      cv.setUint32(16, crc, true);
+      cv.setUint32(20, size, true);
+      cv.setUint32(24, size, true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0, true);
+      cv.setUint16(32, 0, true);
+      cv.setUint16(34, 0, true);
+      cv.setUint16(36, 0, true);
+      cv.setUint32(38, 0, true);
+      cv.setUint32(42, offset, true);
+      centralParts.push(new Uint8Array(ch), nameBytes);
+
+      offset += 30 + nameBytes.length + size;
+    }
+
+    let cdSize = 0;
+    for (const part of centralParts) cdSize += part.length;
+
+    const eocd = new ArrayBuffer(22);
+    const ev = new DataView(eocd);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(4, 0, true);
+    ev.setUint16(6, 0, true);
+    ev.setUint16(8, entries.length, true);
+    ev.setUint16(10, entries.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+
+    return new Blob([...localParts, ...centralParts, new Uint8Array(eocd)], { type: 'application/zip' });
+  }
+
+  function triggerDownloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+
+  // --- Apply Language ---
+  function applyLanguage() {
+    const L = t();
+    document.documentElement.lang = lang;
+    document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+    document.title = L.docTitle;
+
+    langToggleBtn.textContent      = L.langSwitch;
+    lblLoadImg.textContent         = L.loadImg;
+    modeBoundaryBtn.textContent    = L.modeBoundary;
+    modeFeatureBtn.textContent     = L.modeFeature;
+    modePanBtn.textContent         = L.modePan;
+    lblListBtn.textContent         = L.listBtn;
+    toggleSettingsBtn.textContent  = L.settingsBtn;
+
+    closePolyBtn.textContent       = L.closePoly;
+    undoBoundaryBtn.textContent    = L.undo;
+    clearBoundaryBtn.textContent   = L.clearBoundary;
+
+    geomPolyBtn.textContent        = L.geomPoly;
+    geomPinBtn.textContent         = L.geomPin;
+    finishFeatBtn.textContent      = L.finishFeat;
+    undoFeatBtn.textContent        = L.undoPoint;
+    cancelFeatBtn.textContent      = L.cancelDraft;
+    dropGpsPtBtn.textContent       = L.dropGpsPt;
+    cancelScaleBtn.textContent     = L.cancelScale;
+    doneGeorefBtn.textContent      = L.doneGeoref;
+    undoGcpBtn.textContent         = L.undoGcp;
+    clearGcpBtn.textContent        = L.clearGcp;
+
+    lblCols.textContent            = L.cols;
+    lblRows.textContent            = L.rows;
+    lblAlign.textContent           = L.align;
+    lblDim.textContent             = L.dim;
+    lblSub.textContent             = L.sub;
+    lblShowGrid.textContent        = L.showGrid;
+    lblLayersTitle.textContent     = L.layersTitle;
+    lblFiltRem.textContent         = L.filtRem;
+    lblFiltRep.textContent         = L.filtRep;
+    lblFiltMod.textContent         = L.filtMod;
+    lblFiltAdd.textContent         = L.filtAdd;
+    lblFiltPin.textContent         = L.filtPin;
+    lblShowGcp.textContent         = L.showGcp;
+
+    lblGpsSectionTitle.textContent = L.gpsSectionTitle;
+    modeGeorefBtn.textContent      = L.modeGeoref;
+    manualCoordPtBtn.textContent   = L.manualCoordPt;
+    modeScaleBtn.textContent       = L.scaleBtn;
+    lblAiExportTitle.textContent   = L.aiExportTitle;
+    exportZipBtn.textContent       = L.exportZip;
+    exportRefSheetBtn.textContent  = L.exportRefSheet;
+    lblEmbedPhotos.textContent     = L.embedPhotos;
+    saveCropBtn.textContent        = L.saveCrop;
+    saveFullBtn.textContent        = L.saveFull;
+    exportJsonBtn.textContent      = L.exportJson;
+    lblImportJson.textContent      = L.importJson;
+
+    zoomInBtn.title                = L.zoomIn;
+    zoomOutBtn.title               = L.zoomOut;
+    fitBtn.title                   = L.fit;
+
+    lblOpType.textContent          = L.opTypeLbl;
+    typeBtnADD.textContent         = L.typeADD;
+    typeBtnREP.textContent         = L.typeREP;
+    typeBtnREM.textContent         = L.typeREM;
+    typeBtnMOD.textContent         = L.typeMOD;
+    lblFeatName.textContent        = L.featNameLbl;
+    lblFeatPhoto.textContent       = L.featPhotoLbl;
+    featPhotoIn.placeholder        = L.featPhotoPh;
+    lblPickPhotos.textContent      = L.pickPhotos;
+    lblRepRemove.textContent       = L.repRemLbl;
+    repRemoveIn.placeholder        = L.repRemPh;
+    lblRepAdd.textContent          = L.repAddLbl;
+    repAddIn.placeholder           = L.repAddPh;
+    modalSaveBtn.textContent       = L.modalSave;
+    modalResumeBtn.textContent     = L.modalResume;
+
+    lblCoordQuickPaste.textContent = L.coordQuickPasteLbl;
+    lblCoordLat.textContent        = L.coordLatLbl;
+    lblCoordLon.textContent        = L.coordLonLbl;
+    lblCoordName.textContent       = L.coordNameLbl;
+    coordNameIn.placeholder        = L.coordNamePh;
+    coordCancelBtn.textContent     = L.coordCancel;
+    cleanModeBtn.textContent       = '👁️‍🗨️ ' + L.cleanModeBtn;
+    fullscreenBtn.title            = L.fullscreenTitle;
+    cleanFsBtn.title               = L.fullscreenTitle;
+    lblAutosaveSectionTitle.textContent = L.autosaveSectionTitle;
+    clearAutosaveBtn.textContent   = L.clearAutosaveBtn;
+    updateAutosaveLabel();
+    updateFullscreenButtons();
+
+    if (featModal.classList.contains('open')) {
+      refreshModalTexts();
+      renderModalThumbs();
+    }
+    renderFeaturesList();
+    updateUI();
+    updateCompassHud();
+    updateGpsHud();
+    renderView();
+  }
+
+  langToggleBtn.onclick = () => {
+    lang = (lang === 'ar') ? 'en' : 'ar';
+    try { localStorage.setItem('village_survey_lang', lang); } catch {}
+    applyLanguage();
+  };
+
+  // --- Canvas sizing & transforms ---
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = stage.getBoundingClientRect();
+    viewCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+    viewCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+    vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    renderView();
+  }
+  window.addEventListener('resize', resizeCanvas);
+
+  function fitImage() {
+    if (!img) return;
+    const rect = stage.getBoundingClientRect();
+    const scaleX = rect.width / img.naturalWidth;
+    const scaleY = rect.height / img.naturalHeight;
+    zoom = Math.min(scaleX, scaleY) * 0.96;
+    panX = (rect.width - img.naturalWidth * zoom) / 2;
+    panY = (rect.height - img.naturalHeight * zoom) / 2;
+    renderView();
+  }
+
+  function centerOnFeature(feat) {
+    if (!img || !feat || !feat.points || !feat.points.length) return;
+    const rect = stage.getBoundingClientRect();
+    if (feat.geometry === 'point' || feat.points.length === 1) {
+      const p = feat.points[0];
+      zoom = clamp(Math.max(zoom, 2.2), 0.6, 8);
+      panX = rect.width / 2 - p.x * zoom;
+      panY = rect.height / 2 - p.y * zoom;
+      renderView();
+      return;
+    }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of feat.points) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const pw = Math.max(40, maxX - minX);
+    const ph = Math.max(40, maxY - minY);
+    zoom = clamp(Math.min(rect.width / (pw * 2.4), rect.height / (ph * 2.4)), 0.4, 8);
+    panX = rect.width / 2 - ((minX + maxX) / 2) * zoom;
+    panY = rect.height / 2 - ((minY + maxY) / 2) * zoom;
+    renderView();
+  }
+
+  function screenToImage(sx, sy) {
+    return { x: (sx - panX) / zoom, y: (sy - panY) / zoom };
+  }
+
+  function imageToScreen(ix, iy) {
+    return { x: ix * zoom + panX, y: iy * zoom + panY };
+  }
+
+  function clamp(v, lo, hi) {
+    return Math.max(lo, Math.min(hi, v));
+  }
+
+  function zoomAt(factor, cx, cy) {
+    if (!img) return;
+    const newZoom = clamp(zoom * factor, 0.15, 14);
+    const ratio = newZoom / zoom;
+    panX = cx - (cx - panX) * ratio;
+    panY = cy - (cy - panY) * ratio;
+    zoom = newZoom;
+    renderView();
+  }
+
+  // --- Geometry helpers ---
+  function normalizeAngle(theta) {
+    const halfPi = Math.PI / 2;
+    while (theta <= -Math.PI / 4) theta += halfPi;
+    while (theta > Math.PI / 4) theta -= halfPi;
+    return theta;
+  }
+
+  function clipHalfPlane(poly, isInside, intersect) {
+    if (!poly.length) return [];
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const curr = poly[i];
+      const prev = poly[(i + poly.length - 1) % poly.length];
+      const cIn = isInside(curr);
+      const pIn = isInside(prev);
+      if (cIn) {
+        if (!pIn) out.push(intersect(prev, curr));
+        out.push(curr);
+      } else if (pIn) {
+        out.push(intersect(prev, curr));
+      }
+    }
+    return out;
+  }
+
+  function clipPolyToRect(uvPoly, u0, u1, v0, v1) {
+    let p = uvPoly;
+    p = clipHalfPlane(p, a => a.u >= u0, (a, b) => {
+      const du = b.u - a.u;
+      const t = Math.abs(du) < 1e-12 ? 0 : (u0 - a.u) / du;
+      return { u: u0, v: a.v + (b.v - a.v) * t };
+    });
+    p = clipHalfPlane(p, a => a.u <= u1, (a, b) => {
+      const du = b.u - a.u;
+      const t = Math.abs(du) < 1e-12 ? 0 : (u1 - a.u) / du;
+      return { u: u1, v: a.v + (b.v - a.v) * t };
+    });
+    p = clipHalfPlane(p, a => a.v >= v0, (a, b) => {
+      const dv = b.v - a.v;
+      const t = Math.abs(dv) < 1e-12 ? 0 : (v0 - a.v) / dv;
+      return { u: a.u + (b.u - a.u) * t, v: v0 };
+    });
+    p = clipHalfPlane(p, a => a.v <= v1, (a, b) => {
+      const dv = b.v - a.v;
+      const t = Math.abs(dv) < 1e-12 ? 0 : (v1 - a.v) / dv;
+      return { u: a.u + (b.u - a.u) * t, v: v1 };
+    });
+    return p;
+  }
+
+  function polyAreaCentroidUV(poly) {
+    if (poly.length < 3) return { area: 0, u: 0, v: 0 };
+    let a = 0, cu = 0, cv = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const p0 = poly[i];
+      const p1 = poly[(i + 1) % poly.length];
+      const cross = p0.u * p1.v - p1.u * p0.v;
+      a += cross;
+      cu += (p0.u + p1.u) * cross;
+      cv += (p0.v + p1.v) * cross;
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-6) return { area: 0, u: 0, v: 0 };
+    return { area: Math.abs(a), u: cu / (6 * a), v: cv / (6 * a) };
+  }
+
+  function polyAreaCentroidXY(pts) {
+    if (!pts || pts.length === 0) return { areaPx: 0, cx: 0, cy: 0, perimeterPx: 0 };
+    if (pts.length === 1) return { areaPx: 0, cx: pts[0].x, cy: pts[0].y, perimeterPx: 0 };
+    if (pts.length < 3) {
+      const sx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+      const sy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+      return { areaPx: 0, cx: sx, cy: sy, perimeterPx: 0 };
+    }
+    let a = 0, cx = 0, cy = 0, perim = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p0 = pts[i];
+      const p1 = pts[(i + 1) % pts.length];
+      const cross = p0.x * p1.y - p1.x * p0.y;
+      a += cross;
+      cx += (p0.x + p1.x) * cross;
+      cy += (p0.y + p1.y) * cross;
+      perim += Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    }
+    a *= 0.5;
+    if (Math.abs(a) < 1e-6) {
+      const sx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+      const sy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+      return { areaPx: 0, cx: sx, cy: sy, perimeterPx: perim };
+    }
+    return { areaPx: Math.abs(a), cx: cx / (6 * a), cy: cy / (6 * a), perimeterPx: perim };
+  }
+
+  function colLabel(idx) {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (idx < 26) return letters[idx];
+    return letters[Math.floor(idx / 26) - 1] + letters[idx % 26];
+  }
+
+  function computeGridModel() {
+    if (!closed || points.length < 3) return null;
+    const cols = clamp(parseInt(colsIn.value, 10) || 6, 2, 20);
+    const rows = clamp(parseInt(rowsIn.value, 10) || 4, 2, 20);
+    let theta = 0;
+    if (alignIn.checked) {
+      theta = normalizeAngle(Math.atan2(points[1].y - points[0].y, points[1].x - points[0].x));
+    }
+    const cosT = Math.cos(theta);
+    const sinT = Math.sin(theta);
+
+    const toUV = (x, y) => ({ u: x * cosT + y * sinT, v: -x * sinT + y * cosT });
+    const toXY = (u, v) => ({ x: u * cosT - v * sinT, y: u * sinT + v * cosT });
+
+    const uvPoly = points.map(p => toUV(p.x, p.y));
+    let uMin = Infinity, uMax = -Infinity, vMin = Infinity, vMax = -Infinity;
+    for (const q of uvPoly) {
+      if (q.u < uMin) uMin = q.u;
+      if (q.u > uMax) uMax = q.u;
+      if (q.v < vMin) vMin = q.v;
+      if (q.v > vMax) vMax = q.v;
+    }
+    const spanU = uMax - uMin;
+    const spanV = vMax - vMin;
+    if (spanU < 2 || spanV < 2) return null;
+
+    const cu = spanU / cols;
+    const cv = spanV / rows;
+    const cellArea = cu * cv;
+    const labels = [];
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const u0 = uMin + c * cu;
+        const u1 = u0 + cu;
+        const v0 = vMin + r * cv;
+        const v1 = v0 + cv;
+        const clipped = clipPolyToRect(uvPoly, u0, u1, v0, v1);
+        const { area, u, v } = polyAreaCentroidUV(clipped);
+        if (area >= cellArea * 0.03) {
+          const xy = toXY(u, v);
+          labels.push({ text: colLabel(c) + (r + 1), x: xy.x, y: xy.y });
+        }
+      }
+    }
+    return { cols, rows, uMin, uMax, vMin, vMax, cu, cv, toUV, toXY, labels, theta };
+  }
+
+  function detectFeatureSectors(featPts) {
+    const grid = computeGridModel();
+    if (!grid || !featPts || featPts.length === 0) return [];
+    const samplePts = (featPts.length === 1)
+      ? [featPts[0]]
+      : [...featPts, { x: polyAreaCentroidXY(featPts).cx, y: polyAreaCentroidXY(featPts).cy }];
+    const found = new Set();
+    for (const p of samplePts) {
+      const uv = grid.toUV(p.x, p.y);
+      const c = Math.floor((uv.u - grid.uMin) / grid.cu);
+      const r = Math.floor((uv.v - grid.vMin) / grid.cv);
+      if (c >= 0 && c < grid.cols && r >= 0 && r < grid.rows) {
+        found.add(colLabel(c) + (r + 1));
+      }
+    }
+    return Array.from(found).sort();
+  }
+
+  function formatFeatMetrics(pts, geom) {
+    const L = t();
+    const sectors = detectFeatureSectors(pts);
+    const sep = (lang === 'ar') ? '، ' : ', ';
+    const secText = !closed
+      ? L.sectorNone
+      : (sectors.length ? `${L.sectorPrefix} ${sectors.join(sep)}` : L.sectorOut);
+
+    if (geom === 'point' || pts.length === 1) {
+      const p = pts[0] || { x: 0, y: 0 };
+      const ll = imageXYToLatLon(p.x, p.y);
+      const llStr = ll ? ` | ${ll.lat.toFixed(5)}, ${ll.lon.toFixed(5)}` : '';
+      return `${secText} | ${L.pinPointStat(p.x, p.y)}${llStr}`;
+    }
+    const { areaPx, perimeterPx } = polyAreaCentroidXY(pts);
+    if (metersPerPixel) {
+      const areaM2 = (areaPx * metersPerPixel * metersPerPixel).toFixed(1);
+      const perimM = (perimeterPx * metersPerPixel).toFixed(1);
+      return `${secText} | ${L.areaPerim(areaM2, perimM)}`;
+    }
+    return `${secText} | ${L.corners(pts.length)}`;
+  }
+
+  function formatId(n) {
+    return 'ID-' + String(n).padStart(2, '0');
+  }
+
+  function placeLabelBox(cx, cy, bw, bh, placedBoxes) {
+    let x = cx, y = cy;
+    const gap = Math.max(3, bh * 0.2);
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const collides = placedBoxes.some(b =>
+        Math.abs(x - b.x) < (bw + b.w) * 0.5 &&
+        Math.abs(y - b.y) < (bh + b.h) * 0.5
+      );
+      if (!collides) break;
+      const dir = (attempt % 2 === 0) ? 1 : -1;
+      const step = Math.floor(attempt / 2) + 1;
+      y = cy + dir * step * (bh + gap);
+    }
+    placedBoxes.push({ x, y, w: bw, h: bh });
+    return { x, y };
+  }
+
+  // --- Shared high-precision renderer ---
+  function drawSceneOnContext(ctx, forExport) {
+    if (!img) return;
+    const W = img.naturalWidth;
+    const H = img.naturalHeight;
+    const refScale = Math.min(W, H);
+    const L = t();
+
+    ctx.drawImage(img, 0, 0);
+
+    // 1. Dim outside village boundary
+    if (closed && points.length >= 3 && dimIn.checked) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(4, 10, 22, 0.54)";
+      ctx.fill("evenodd");
+      ctx.restore();
+    }
+
+    // 2. Clipped village grid
+    const grid = showGridIn.checked ? computeGridModel() : null;
+    if (grid) {
+      const gridRef = Math.min(grid.uMax - grid.uMin, grid.vMax - grid.vMin);
+      const baseLine = Math.max(1.2, gridRef / 480);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      ctx.closePath();
+      ctx.clip();
+
+      if (subIn.checked) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+        ctx.lineWidth = Math.max(1, baseLine * 0.7);
+        ctx.setLineDash([baseLine * 4, baseLine * 4]);
+        for (let c = 0; c < grid.cols; c++) {
+          const u = grid.uMin + (c + 0.5) * grid.cu;
+          const p0 = grid.toXY(u, grid.vMin);
+          const p1 = grid.toXY(u, grid.vMax);
+          ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
+        for (let r = 0; r < grid.rows; r++) {
+          const v = grid.vMin + (r + 0.5) * grid.cv;
+          const p0 = grid.toXY(grid.uMin, v);
+          const p1 = grid.toXY(grid.uMax, v);
+          ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      const strokeGrid = (color, lw) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+        ctx.setLineDash([]);
+        for (let c = 1; c < grid.cols; c++) {
+          const u = grid.uMin + c * grid.cu;
+          const p0 = grid.toXY(u, grid.vMin);
+          const p1 = grid.toXY(u, grid.vMax);
+          ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
+        for (let r = 1; r < grid.rows; r++) {
+          const v = grid.vMin + r * grid.cv;
+          const p0 = grid.toXY(grid.uMin, v);
+          const p1 = grid.toXY(grid.uMax, v);
+          ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+        }
+      };
+      strokeGrid("rgba(0, 0, 0, 0.78)", baseLine * 2.0);
+      strokeGrid("rgba(255, 235, 0, 0.88)", baseLine * 1.0);
+
+      const cellMin = Math.min(grid.cu, grid.cv);
+      const fs = Math.max(10, Math.min(44, Math.round(cellMin * 0.24)));
+      ctx.font = `bold ${fs}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (const lbl of grid.labels) {
+        const tw = ctx.measureText(lbl.text).width;
+        const padX = Math.max(3, fs * 0.24);
+        const padY = Math.max(2, fs * 0.16);
+        const bw = tw + padX * 2;
+        const bh = fs + padY * 2;
+        ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+        ctx.fillRect(lbl.x - bw / 2, lbl.y - bh / 2, bw, bh);
+        ctx.fillStyle = "#ffeb00";
+        ctx.fillText(lbl.text, lbl.x, lbl.y + 0.5);
+      }
+      ctx.restore();
+    }
+
+    // 3. Village boundary border
+    if (points.length > 0) {
+      const borderW = forExport ? Math.max(2.4, refScale / 360) : (2.5 / zoom);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+      if (closed) ctx.closePath();
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.lineWidth = borderW * 1.9;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.stroke();
+
+      ctx.strokeStyle = closed ? "#00f5ff" : "#38bdf8";
+      ctx.lineWidth = borderW;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 4. Saved features (polygons & pins)
+    if (features.length > 0) {
+      const fLineW = forExport ? Math.max(2.2, refScale / 380) : (2.4 / zoom);
+      const labelFs = forExport ? Math.max(12, Math.round(refScale / 56)) : Math.max(10, 12 / zoom);
+      const pinR = forExport ? Math.max(6, refScale / 115) : (7.5 / zoom);
+
+      const ordered = features
+        .map((feat, origIdx) => ({ feat, origIdx }))
+        .filter(item => isFeatureVisible(item.feat))
+        .sort((a, b) => {
+          const gA = a.feat.geometry === 'point' ? 1 : 0;
+          const gB = b.feat.geometry === 'point' ? 1 : 0;
+          if (gA !== gB) return gA - gB;
+          return (TYPE_STYLES[a.feat.type]?.order || 4) - (TYPE_STYLES[b.feat.type]?.order || 4);
+        });
+
+      for (const { feat, origIdx } of ordered) {
+        if (!feat.points || feat.points.length === 0) continue;
+        const st = TYPE_STYLES[feat.type] || TYPE_STYLES.ADD;
+
+        ctx.save();
+        if (feat.geometry === 'point' || feat.points.length === 1) {
+          const p = feat.points[0];
+          const isDragged = !forExport && dragTarget && dragTarget.kind === 'feature' && dragTarget.featIdx === origIdx;
+          const r = isDragged ? pinR * 1.3 : pinR;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r * 1.55, 0, Math.PI * 2);
+          ctx.fillStyle = st.fill;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.fillStyle = isDragged ? '#f59e0b' : st.stroke;
+          ctx.fill();
+          ctx.lineWidth = Math.max(1.5, fLineW * 0.9);
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r * 0.32, 0, Math.PI * 2);
+          ctx.fillStyle = '#080f1d';
+          ctx.fill();
+        } else if (feat.points.length >= 3) {
+          ctx.beginPath();
+          ctx.moveTo(feat.points[0].x, feat.points[0].y);
+          for (let i = 1; i < feat.points.length; i++) ctx.lineTo(feat.points[i].x, feat.points[i].y);
+          ctx.closePath();
+
+          ctx.fillStyle = st.fill;
+          ctx.fill();
+
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+          ctx.lineWidth = fLineW * 1.9;
+          ctx.lineJoin = "round";
+          ctx.setLineDash([]);
+          ctx.stroke();
+
+          ctx.strokeStyle = st.stroke;
+          ctx.lineWidth = fLineW;
+          if (st.dash.length) {
+            const dScale = forExport ? Math.max(1, refScale / 700) : (1 / zoom);
+            ctx.setLineDash(st.dash.map(v => v * dScale));
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          if (!forExport && mode === 'feature' && editSavedVertices && draftPoints.length === 0) {
+            const hr = 6 / zoom;
+            for (let vi = 0; vi < feat.points.length; vi++) {
+              const vp = feat.points[vi];
+              const isDragged = dragTarget && dragTarget.kind === 'feature' && dragTarget.featIdx === origIdx && dragTarget.idx === vi;
+              ctx.beginPath();
+              ctx.arc(vp.x, vp.y, isDragged ? hr * 1.35 : hr, 0, Math.PI * 2);
+              ctx.fillStyle = isDragged ? '#f59e0b' : st.stroke;
+              ctx.fill();
+              ctx.lineWidth = 1.6 / zoom;
+              ctx.strokeStyle = '#ffffff';
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.restore();
+      }
+
+      const placedBoxes = [];
+      ctx.save();
+      ctx.font = `bold ${labelFs}px Tahoma, Arial, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (const { feat } of ordered) {
+        if (!feat.points || feat.points.length === 0) continue;
+        const st = TYPE_STYLES[feat.type] || TYPE_STYLES.ADD;
+        const shortType = L.shortType[feat.type] || feat.type;
+        const isPin = (feat.geometry === 'point' || feat.points.length === 1);
+        const anchor = isPin
+          ? { cx: feat.points[0].x, cy: feat.points[0].y }
+          : polyAreaCentroidXY(feat.points);
+
+        const hasPhoto = (feat.photos && feat.photos.length > 0) || !!feat.photoRef;
+        const photoCount = (feat.photos && feat.photos.length > 0) ? ` 📷${feat.photos.length}` : (feat.photoRef ? ' 📷' : '');
+        const iconPrefix = isPin ? '📌 ' : '';
+        const caption = feat.name
+          ? `${iconPrefix}${feat.id} (${shortType}): ${feat.name}${hasPhoto ? photoCount : ''}`
+          : `${iconPrefix}${feat.id} (${shortType})${hasPhoto ? photoCount : ''}`;
+
+        const tw = ctx.measureText(caption).width;
+        const px = labelFs * 0.42;
+        const py = labelFs * 0.26;
+        const bw = tw + px * 2;
+        const bh = labelFs + py * 2;
+
+        const targetY = isPin ? (anchor.cy - pinR * 2.1 - bh * 0.5) : anchor.cy;
+        const pos = placeLabelBox(anchor.cx, targetY, bw, bh, placedBoxes);
+
+        if (isPin || Math.hypot(pos.x - anchor.cx, pos.y - anchor.cy) > bh * 0.5) {
+          ctx.beginPath();
+          ctx.moveTo(anchor.cx, anchor.cy);
+          ctx.lineTo(pos.x, pos.y);
+          ctx.strokeStyle = st.stroke;
+          ctx.lineWidth = Math.max(1, fLineW * 0.6);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "rgba(8, 15, 29, 0.88)";
+        ctx.fillRect(pos.x - bw / 2, pos.y - bh / 2, bw, bh);
+        ctx.strokeStyle = st.stroke;
+        ctx.lineWidth = Math.max(1, fLineW * 0.65);
+        ctx.strokeRect(pos.x - bw / 2, pos.y - bh / 2, bw, bh);
+        ctx.fillStyle = st.badge;
+        ctx.fillText(caption, pos.x, pos.y + 0.5);
+      }
+      ctx.restore();
+    }
+
+    // 5. Georeferencing Ground Control Points (GCP crosshair markers — live view only)
+    if (!forExport && (showGcpIn.checked || mode === 'georef') && gcps.length > 0) {
+      const r = 8 / zoom;
+      const fs = Math.max(9, 10.5 / zoom);
+      ctx.save();
+      ctx.font = `bold ${fs}px monospace`;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      gcps.forEach((g, idx) => {
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3.5 / zoom;
+        ctx.beginPath();
+        ctx.moveTo(g.x - r * 1.6, g.y); ctx.lineTo(g.x + r * 1.6, g.y);
+        ctx.moveTo(g.x, g.y - r * 1.6); ctx.lineTo(g.x, g.y + r * 1.6);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#f43f5e";
+        ctx.lineWidth = 1.8 / zoom;
+        ctx.beginPath();
+        ctx.moveTo(g.x - r * 1.6, g.y); ctx.lineTo(g.x + r * 1.6, g.y);
+        ctx.moveTo(g.x, g.y - r * 1.6); ctx.lineTo(g.x, g.y + r * 1.6);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, r * 0.75, 0, Math.PI * 2);
+        ctx.strokeStyle = "#f43f5e";
+        ctx.lineWidth = 2 / zoom;
+        ctx.stroke();
+
+        const lbl = g.label || `GCP-${idx + 1}`;
+        const tw = ctx.measureText(lbl).width;
+        ctx.fillStyle = "rgba(8, 15, 29, 0.85)";
+        ctx.fillRect(g.x + r * 1.4, g.y - fs * 0.7, tw + 8 / zoom, fs * 1.4);
+        ctx.fillStyle = "#fda4af";
+        ctx.fillText(lbl, g.x + r * 1.4 + 4 / zoom, g.y);
+      });
+      ctx.restore();
+    }
+
+    // 6. Live GPS Blue Dot + Accuracy Circle + Compass Heading Cone (live view only)
+    if (!forExport && gpsActive && liveGps && georefModel) {
+      const pos = latLonToImageXY(liveGps.lat, liveGps.lon);
+      if (pos) {
+        ctx.save();
+        // Accuracy radius in pixels
+        if (georefModel.metersPerPx && liveGps.accuracy > 0) {
+          const accPx = clamp(liveGps.accuracy / georefModel.metersPerPx, 6 / zoom, Math.max(W, H) * 0.5);
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, accPx, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(56, 189, 248, 0.16)";
+          ctx.fill();
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.65)";
+          ctx.lineWidth = 1.5 / zoom;
+          ctx.stroke();
+        }
+        // Directional heading cone if live compass is active
+        if (compassActive && compassHeading !== null) {
+          // Convert compass heading (0=N, 90=E) to image pixel direction vector using georef Jacobian
+          const rad = compassHeading * Math.PI / 180;
+          const eDir = Math.sin(rad);
+          const nDir = Math.cos(rad);
+          const vx = georefModel.ax * eDir + georefModel.bx * nDir;
+          const vy = georefModel.ay * eDir + georefModel.by * nDir;
+          const imgAngle = Math.atan2(vy, vx);
+          const coneLen = 34 / zoom;
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y);
+          ctx.arc(pos.x, pos.y, coneLen, imgAngle - 0.35, imgAngle + 0.35);
+          ctx.closePath();
+          ctx.fillStyle = "rgba(34, 211, 238, 0.34)";
+          ctx.fill();
+        }
+        // Core glowing GPS dot
+        const dr = 8.5 / zoom;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, dr, 0, Math.PI * 2);
+        ctx.fillStyle = "#0ea5e9";
+        ctx.fill();
+        ctx.lineWidth = 2.8 / zoom;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    // 7. Draft feature polygon
+    if (!forExport && draftPoints.length > 0 && modalGeom === 'polygon') {
+      const lw = 2.5 / zoom;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(draftPoints[0].x, draftPoints[0].y);
+      for (let i = 1; i < draftPoints.length; i++) ctx.lineTo(draftPoints[i].x, draftPoints[i].y);
+
+      if (draftPoints.length >= 3) {
+        ctx.save();
+        ctx.closePath();
+        ctx.fillStyle = "rgba(34, 197, 94, 0.18)";
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.85)";
+      ctx.lineWidth = lw * 1.9;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+
+      ctx.strokeStyle = "#4ade80";
+      ctx.lineWidth = lw;
+      ctx.stroke();
+
+      if (draftPoints.length >= 3) {
+        const last = draftPoints[draftPoints.length - 1];
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(draftPoints[0].x, draftPoints[0].y);
+        ctx.strokeStyle = "rgba(74, 222, 128, 0.85)";
+        ctx.lineWidth = 1.8 / zoom;
+        ctx.setLineDash([6 / zoom, 5 / zoom]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      if (metersPerPixel && draftPoints.length >= 2) {
+        const efs = Math.max(9, 11 / zoom);
+        ctx.font = `bold ${efs}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        for (let i = 1; i < draftPoints.length; i++) {
+          const a = draftPoints[i - 1], b = draftPoints[i];
+          const distM = Math.hypot(b.x - a.x, b.y - a.y) * metersPerPixel;
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          const txt = `${distM.toFixed(1)}m`;
+          const tw = ctx.measureText(txt).width;
+          ctx.fillStyle = "rgba(0,0,0,0.78)";
+          ctx.fillRect(mx - tw / 2 - 3 / zoom, my - efs / 2 - 2 / zoom, tw + 6 / zoom, efs + 4 / zoom);
+          ctx.fillStyle = "#86efac";
+          ctx.fillText(txt, mx, my);
+        }
+      }
+
+      const r = 7 / zoom;
+      const vfs = Math.max(9, 11 / zoom);
+      ctx.font = `bold ${vfs}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 0; i < draftPoints.length; i++) {
+        const p = draftPoints[i];
+        const isCloseTarget = (draftPoints.length >= 3 && i === 0);
+        const isDragged = dragTarget && dragTarget.kind === 'draft' && dragTarget.idx === i;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, isCloseTarget ? r * 1.38 : r, 0, Math.PI * 2);
+        ctx.fillStyle = isCloseTarget ? "#22c55e" : (isDragged ? "#f59e0b" : "#4ade80");
+        ctx.fill();
+        ctx.lineWidth = 2 / zoom;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.fillStyle = "#080f1d";
+        ctx.fillText(String(i + 1), p.x, p.y + 0.5 / zoom);
+      }
+      ctx.restore();
+    }
+
+    // 8. Draft pin preview
+    if (!forExport && draftPoints.length === 1 && modalGeom === 'point') {
+      const p = draftPoints[0];
+      const r = 8 / zoom;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#22c55e";
+      ctx.fill();
+      ctx.lineWidth = 2 / zoom;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 9. Boundary vertex handles
+    if (!forExport && mode === 'boundary' && points.length > 0) {
+      const r = 7 / zoom;
+      const fs = Math.max(9, 11 / zoom);
+      ctx.save();
+      ctx.font = `bold ${fs}px monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        const isCloseTarget = (!closed && points.length >= 3 && i === 0);
+        const isDragged = dragTarget && dragTarget.kind === 'boundary' && dragTarget.idx === i;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, isCloseTarget ? r * 1.35 : r, 0, Math.PI * 2);
+        ctx.fillStyle = isCloseTarget ? "#22c55e" : (isDragged ? "#f59e0b" : "#0ea5e9");
+        ctx.fill();
+        ctx.lineWidth = 2 / zoom;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.fillStyle = "#080f1d";
+        ctx.fillText(String(i + 1), p.x, p.y + 0.5 / zoom);
+      }
+      ctx.restore();
+    }
+
+    // 10. Scale calibration handles
+    if (!forExport && mode === 'scale' && scalePoints.length > 0) {
+      const r = 7 / zoom;
+      ctx.save();
+      if (scalePoints.length === 2) {
+        ctx.beginPath();
+        ctx.moveTo(scalePoints[0].x, scalePoints[0].y);
+        ctx.lineTo(scalePoints[1].x, scalePoints[1].y);
+        ctx.strokeStyle = "rgba(0,0,0,0.85)";
+        ctx.lineWidth = 4.5 / zoom;
+        ctx.stroke();
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 2.4 / zoom;
+        ctx.stroke();
+      }
+      for (const p of scalePoints) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fill();
+        ctx.lineWidth = 2 / zoom;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function renderView() {
+    const rect = stage.getBoundingClientRect();
+    vctx.clearRect(0, 0, rect.width, rect.height);
+    if (!img) return;
+    vctx.save();
+    vctx.translate(panX, panY);
+    vctx.scale(zoom, zoom);
+    drawSceneOnContext(vctx, false);
+    vctx.restore();
+  }
+
+  // --- UI Synchronization ---
+  function renderFeaturesList() {
+    const L = t();
+    featCountBadge.textContent = String(features.length);
+    if (features.length === 0) {
+      featuresListEl.innerHTML = `<div class="feat-empty">${L.listEmpty}</div>`;
+      return;
+    }
+    featuresListEl.innerHTML = '';
+
+    const ordered = features
+      .map((f, idx) => ({ f, idx }))
+      .sort((a, b) => (TYPE_STYLES[a.f.type]?.order || 4) - (TYPE_STYLES[b.f.type]?.order || 4));
+
+    ordered.forEach(({ f, idx }) => {
+      const item = document.createElement('div');
+      item.className = 'feat-item';
+
+      const info = document.createElement('div');
+      info.className = 'feat-info';
+
+      const title = document.createElement('div');
+      title.className = 'feat-title';
+
+      const tag = document.createElement('span');
+      tag.className = `tag tag-${f.type}`;
+      tag.textContent = `${f.id} · ${L.shortType[f.type] || f.type}`;
+      title.appendChild(tag);
+
+      const gTag = document.createElement('span');
+      gTag.className = 'tag tag-geom';
+      gTag.textContent = (f.geometry === 'point') ? L.geomTagPin : L.geomTagPoly;
+      title.appendChild(gTag);
+
+      const pCount = (f.photos && f.photos.length) || 0;
+      if (pCount > 0 || f.photoRef) {
+        const pTag = document.createElement('span');
+        pTag.className = 'tag tag-photo';
+        pTag.textContent = pCount > 0 ? `📷 ${pCount}` : `📷 ${f.photoRef}`;
+        title.appendChild(pTag);
+      }
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = f.name || L.unnamed;
+      title.appendChild(nameSpan);
+
+      const meta = document.createElement('div');
+      meta.className = 'feat-meta';
+      const metricsStr = formatFeatMetrics(f.points, f.geometry);
+      if (f.type === 'REP') {
+        const rTxt = f.removeNotes ? `${L.repSummaryRem} ${f.removeNotes}` : '';
+        const aTxt = f.addNotes ? `${L.repSummaryAdd} ${f.addNotes}` : '';
+        const combined = [rTxt, aTxt].filter(Boolean).join(' | ');
+        meta.textContent = combined ? `${metricsStr} — ${combined}` : metricsStr;
+      } else {
+        meta.textContent = f.notes ? `${metricsStr} — ${f.notes}` : metricsStr;
+      }
+
+      info.appendChild(title);
+      info.appendChild(meta);
+
+      if (f.photos && f.photos.length > 0) {
+        const thumbRow = document.createElement('div');
+        thumbRow.className = 'feat-thumbs';
+        f.photos.forEach((ph, pi) => {
+          const im = document.createElement('img');
+          im.className = 'feat-thumb-img';
+          im.src = ph.dataUrl;
+          im.alt = ph.origName;
+          im.title = ph.bearing ? `${ph.origName} [🧭 ${ph.bearing}]` : ph.origName;
+          im.onclick = () => {
+            const bStr = ph.bearing ? ` | 🧭 ${ph.bearing}` : '';
+            openLightbox(ph.dataUrl, `${f.id} — ${buildPhotoExportPath(f.id, pi, ph.origName)}${bStr}`);
+          };
+          thumbRow.appendChild(im);
+        });
+        info.appendChild(thumbRow);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'feat-actions';
+
+      const focusBtn = document.createElement('button');
+      focusBtn.title = L.focusTitle;
+      focusBtn.textContent = '👁️';
+      focusBtn.onclick = () => {
+        listDrawer.classList.remove('open');
+        centerOnFeature(f);
+      };
+
+      const editBtn = document.createElement('button');
+      editBtn.title = L.editTitle;
+      editBtn.textContent = '✏️';
+      editBtn.onclick = () => openFeatureModal(idx, f.geometry);
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.title = L.delTitle;
+      delBtn.textContent = '🗑️';
+      delBtn.onclick = () => {
+        if (confirm(L.confirmDelFeat(f.id))) {
+          features.splice(idx, 1);
+          renderFeaturesList();
+          updateUI();
+          renderView();
+          scheduleAutoSave();
+        }
+      };
+
+      actions.appendChild(focusBtn);
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      item.appendChild(info);
+      item.appendChild(actions);
+      featuresListEl.appendChild(item);
+    });
+  }
+
+  function updateUI() {
+    const L = t();
+    const hasImg = !!img;
+    modeBoundaryBtn.disabled   = !hasImg;
+    modeFeatureBtn.disabled    = !hasImg;
+    modePanBtn.disabled        = !hasImg;
+    modeScaleBtn.disabled      = !hasImg;
+    modeGeorefBtn.disabled     = !hasImg;
+    manualCoordPtBtn.disabled  = !hasImg || !georefModel;
+    toggleListBtn.disabled     = !hasImg;
+    toggleSettingsBtn.disabled = !hasImg;
+    zoomInBtn.disabled         = !hasImg;
+    zoomOutBtn.disabled        = !hasImg;
+    fitBtn.disabled            = !hasImg;
+    cleanModeBtn.disabled      = !hasImg;
+
+    modeBoundaryBtn.className = (mode === 'boundary') ? 'btn-active' : '';
+    modeFeatureBtn.className  = (mode === 'feature')  ? 'btn-active-green' : '';
+    modePanBtn.className      = (mode === 'pan')      ? 'btn-active' : '';
+    modeScaleBtn.className    = (mode === 'scale')    ? 'btn-active-amber' : '';
+    modeGeorefBtn.className   = (mode === 'georef')   ? 'btn-active-amber' : 'btn-primary';
+
+    viewCanvas.style.cursor = (mode === 'pan') ? 'grab' : 'crosshair';
+
+    const showB = (mode === 'boundary');
+    const showF = (mode === 'feature');
+    const showS = (mode === 'scale');
+    const showG = (mode === 'georef');
+    const isPolySub = showF && (featGeom === 'polygon');
+
+    closePolyBtn.style.display       = showB ? 'inline-flex' : 'none';
+    undoBoundaryBtn.style.display    = showB ? 'inline-flex' : 'none';
+    clearBoundaryBtn.style.display   = showB ? 'inline-flex' : 'none';
+
+    geomPolyBtn.style.display        = showF ? 'inline-flex' : 'none';
+    geomPinBtn.style.display         = showF ? 'inline-flex' : 'none';
+    featSep.style.display            = showF ? 'inline-block' : 'none';
+    finishFeatBtn.style.display      = isPolySub ? 'inline-flex' : 'none';
+    undoFeatBtn.style.display        = isPolySub ? 'inline-flex' : 'none';
+    cancelFeatBtn.style.display      = isPolySub ? 'inline-flex' : 'none';
+    toggleEditSavedBtn.style.display = showF ? 'inline-flex' : 'none';
+
+    dropGpsPtBtn.style.display       = (showB || showF) ? 'inline-flex' : 'none';
+    dropGpsPtBtn.disabled            = !hasImg || (showF && editSavedVertices);
+
+    cancelScaleBtn.style.display     = showS ? 'inline-flex' : 'none';
+
+    doneGeorefBtn.style.display      = showG ? 'inline-flex' : 'none';
+    undoGcpBtn.style.display         = showG ? 'inline-flex' : 'none';
+    clearGcpBtn.style.display        = showG ? 'inline-flex' : 'none';
+    undoGcpBtn.disabled              = gcps.length === 0;
+    clearGcpBtn.disabled             = gcps.length === 0;
+
+    geomPolyBtn.disabled  = !hasImg;
+    geomPinBtn.disabled   = !hasImg;
+    geomPolyBtn.className = (featGeom === 'polygon' && !editSavedVertices) ? 'btn-active-green' : '';
+    geomPinBtn.className  = (featGeom === 'point'   && !editSavedVertices) ? 'btn-active-green' : '';
+
+    closePolyBtn.disabled       = !hasImg || closed || points.length < 3;
+    undoBoundaryBtn.disabled    = !hasImg || points.length === 0;
+    clearBoundaryBtn.disabled   = !hasImg || points.length === 0;
+
+    finishFeatBtn.disabled      = !hasImg || draftPoints.length < 3;
+    undoFeatBtn.disabled        = !hasImg || draftPoints.length === 0;
+    cancelFeatBtn.disabled      = !hasImg || draftPoints.length === 0;
+    toggleEditSavedBtn.disabled = !hasImg || features.length === 0 || draftPoints.length > 0;
+    toggleEditSavedBtn.className = editSavedVertices ? 'btn-active-purple' : '';
+    toggleEditSavedBtn.textContent = editSavedVertices ? L.editSavedOn : L.editSavedOff;
+
+    saveCropBtn.disabled       = !hasImg || !closed;
+    saveFullBtn.disabled       = !hasImg || (!closed && features.length === 0);
+    exportJsonBtn.disabled     = !hasImg || (points.length < 3 && features.length === 0 && gcps.length === 0);
+    exportZipBtn.disabled      = !hasImg || (points.length < 3 && features.length === 0);
+    exportRefSheetBtn.disabled = !hasImg || features.length === 0;
+
+    georefInfoLbl.textContent = georefModel
+      ? L.georefOk(gcps.length, georefModel.rmsPx.toFixed(1))
+      : L.georefNone(gcps.length);
+
+    scaleInfoLbl.textContent = metersPerPixel
+      ? L.scaleCal((1 / metersPerPixel).toFixed(2))
+      : L.scaleUncal;
+
+    if (!hasImg) {
+      statusBar.innerHTML = L.statusStart;
+    } else if (mode === 'georef') {
+      statusBar.innerHTML = L.statusGeoref(gcps.length);
+    } else if (mode === 'boundary') {
+      if (!closed) {
+        if (points.length === 0) statusBar.innerHTML = L.statusB0;
+        else if (points.length < 3) statusBar.innerHTML = L.statusBNeed(points.length, 3 - points.length);
+        else statusBar.innerHTML = L.statusBReady(points.length);
+      } else {
+        const g = computeGridModel();
+        statusBar.innerHTML = L.statusBDone(g ? g.labels.length : 0);
+      }
+    } else if (mode === 'feature') {
+      if (editSavedVertices && draftPoints.length === 0) {
+        statusBar.innerHTML = L.statusEditSaved;
+      } else if (featGeom === 'point') {
+        statusBar.innerHTML = L.statusFPin(features.length);
+      } else if (draftPoints.length === 0) {
+        statusBar.innerHTML = L.statusFPoly0(features.length);
+      } else if (draftPoints.length < 3) {
+        statusBar.innerHTML = L.statusFPolyNeed(formatId(nextFeatNum), draftPoints.length, 3 - draftPoints.length);
+      } else {
+        statusBar.innerHTML = L.statusFPolyReady(formatId(nextFeatNum), draftPoints.length);
+      }
+    } else if (mode === 'scale') {
+      statusBar.innerHTML = (scalePoints.length === 0) ? L.statusScale1 : L.statusScale2;
+    } else {
+      statusBar.innerHTML = L.statusPan;
+    }
+    if (lastSavedMode === 'full' || lastSavedMode === 'lite') {
+      const chip = document.createElement('span');
+      chip.className = 'autosave-chip';
+      chip.textContent = `💾 ${lastSavedTimeStr}`;
+      statusBar.appendChild(chip);
+    }
+    updateCleanHud();
+  }
+
+  // --- Feature Modal & Photo Thumbnails with Compass Bearing ---
+  function renderModalThumbs() {
+    const L = t();
+    modalThumbStrip.innerHTML = '';
+    if (isProcessingPhotos) {
+      photoHintLbl.textContent = L.photoHintProcessing;
+      modalSaveBtn.disabled = true;
+      return;
+    }
+    modalSaveBtn.disabled = false;
+
+    if (modalDraftPhotos.length === 0) {
+      photoHintLbl.textContent = L.photoHintIdle;
+      return;
+    }
+    const totalKB = modalDraftPhotos.reduce((s, p) => s + (p.sizeKB || 0), 0);
+    photoHintLbl.textContent = L.photoAttachedCount(modalDraftPhotos.length, totalKB);
+
+    const activeId = (editingFeatIndex >= 0) ? features[editingFeatIndex].id : formatId(nextFeatNum);
+    modalDraftPhotos.forEach((ph, idx) => {
+      const card = document.createElement('div');
+      card.className = 'thumb-card';
+
+      const im = document.createElement('img');
+      im.src = ph.dataUrl;
+      im.alt = ph.origName;
+      im.onclick = () => {
+        const bTxt = ph.bearing ? ` | 🧭 ${ph.bearing}` : '';
+        openLightbox(ph.dataUrl, `${activeId} — ${buildPhotoExportPath(activeId, idx, ph.origName)}${bTxt}`);
+      };
+
+      const cap = document.createElement('div');
+      cap.className = 'thumb-cap';
+      cap.textContent = ph.origName;
+
+      // Compass bearing selector + live stamp button
+      const dirRow = document.createElement('div');
+      dirRow.className = 'thumb-dir-row';
+
+      const sel = document.createElement('select');
+      sel.className = 'thumb-dir-sel';
+      const optNone = document.createElement('option');
+      optNone.value = '';
+      optNone.textContent = L.dirNone;
+      sel.appendChild(optNone);
+
+      // If stamped with exact degree bearing not in 8 cardinals, add custom option
+      const isCustom = ph.bearing && !CARDINALS.includes(ph.bearing);
+      if (isCustom) {
+        const oCust = document.createElement('option');
+        oCust.value = ph.bearing;
+        oCust.textContent = ph.bearing;
+        sel.appendChild(oCust);
+      }
+      CARDINALS.forEach(c => {
+        const o = document.createElement('option');
+        o.value = c;
+        o.textContent = c;
+        sel.appendChild(o);
+      });
+      sel.value = ph.bearing || '';
+      sel.onchange = () => { ph.bearing = sel.value; };
+
+      const stampBtn = document.createElement('button');
+      stampBtn.type = 'button';
+      stampBtn.className = 'thumb-dir-btn';
+      stampBtn.title = L.dirStampTitle;
+      stampBtn.textContent = '🧭';
+      stampBtn.onclick = () => {
+        if (!compassActive || compassHeading === null) {
+          showToast(L.toastCompassNeedLive, 3500);
+          return;
+        }
+        const d = Math.round(compassHeading) % 360;
+        ph.bearing = `${d}° ${degToCardinal(d)}`;
+        renderModalThumbs();
+      };
+
+      dirRow.appendChild(sel);
+      dirRow.appendChild(stampBtn);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'thumb-del';
+      del.textContent = '×';
+      del.onclick = () => {
+        const removed = modalDraftPhotos.splice(idx, 1)[0];
+        if (removed && removed.origName) {
+          const parts = featPhotoIn.value.split(',').map(s => s.trim()).filter(Boolean);
+          const pos = parts.indexOf(removed.origName);
+          if (pos !== -1) {
+            parts.splice(pos, 1);
+            featPhotoIn.value = parts.join(', ');
+          }
+        }
+        renderModalThumbs();
+      };
+
+      card.appendChild(im);
+      card.appendChild(cap);
+      card.appendChild(dirRow);
+      card.appendChild(del);
+      modalThumbStrip.appendChild(card);
+    });
+  }
+
+  photoFilePicker.onchange = async e => {
+    const files = Array.from(e.target.files || []);
+    photoFilePicker.value = '';
+    if (!files.length) return;
+    isProcessingPhotos = true;
+    renderModalThumbs();
+    for (const f of files) {
+      try {
+        const compressed = await compressImageFile(f, 1024, 0.82);
+        modalDraftPhotos.push(compressed);
+        const parts = featPhotoIn.value.split(',').map(s => s.trim()).filter(Boolean);
+        if (!parts.includes(compressed.origName)) {
+          parts.push(compressed.origName);
+          featPhotoIn.value = parts.join(', ');
+        }
+      } catch {}
+    }
+    isProcessingPhotos = false;
+    renderModalThumbs();
+  };
+
+  function refreshModalTexts() {
+    const L = t();
+    const isEdit = (editingFeatIndex >= 0);
+    const isPin = (modalGeom === 'point');
+    modalTitle.textContent = isEdit
+      ? (isPin ? L.modalEditPin : L.modalEditPoly)
+      : (isPin ? L.modalNewPin : L.modalNewPoly);
+    featNameIn.placeholder = isPin ? L.featNamePhPin : L.featNamePhPoly;
+    modalDiscardBtn.textContent = isEdit ? L.modalClose : L.modalDiscardNew;
+    modalResumeBtn.style.display = (!isEdit && !isPin) ? 'inline-flex' : 'none';
+
+    const pts = isEdit ? features[editingFeatIndex].points : draftPoints;
+    modalStats.textContent = formatFeatMetrics(pts, modalGeom);
+    setModalType(modalSelectedType);
+  }
+
+  function setModalType(tp) {
+    const L = t();
+    modalSelectedType = tp;
+    typeBtns.forEach(btn => {
+      btn.className = 'type-btn' + (btn.dataset.type === tp ? ` sel-${tp}` : '');
+    });
+    const isRep = (tp === 'REP');
+    repFieldsWrap.style.display = isRep ? 'block' : 'none';
+    singleNoteWrap.style.display = isRep ? 'none' : 'block';
+    if (tp === 'REM') {
+      singleNoteLbl.textContent = L.noteLblREM;
+      featNotesIn.placeholder   = L.notePhREM;
+    } else if (tp === 'MOD') {
+      singleNoteLbl.textContent = L.noteLblMOD;
+      featNotesIn.placeholder   = L.notePhMOD;
+    } else {
+      singleNoteLbl.textContent = L.noteLblADD;
+      featNotesIn.placeholder   = L.notePhADD;
+    }
+  }
+  typeBtns.forEach(btn => {
+    btn.onclick = () => setModalType(btn.dataset.type);
+  });
+
+  function openFeatureModal(editIdx, geomType) {
+    editingFeatIndex = editIdx;
+    modalGeom = geomType || 'polygon';
+    isProcessingPhotos = false;
+    if (editIdx === -1) {
+      modalIdBadge.textContent = formatId(nextFeatNum);
+      modalSelectedType = 'ADD';
+      featNameIn.value = '';
+      featPhotoIn.value = '';
+      featNotesIn.value = '';
+      repRemoveIn.value = '';
+      repAddIn.value = '';
+      modalDraftPhotos = [];
+    } else {
+      const f = features[editIdx];
+      modalIdBadge.textContent = f.id;
+      modalSelectedType = f.type;
+      featNameIn.value = f.name || '';
+      featPhotoIn.value = f.photoRef || '';
+      featNotesIn.value = f.notes || '';
+      repRemoveIn.value = f.removeNotes || '';
+      repAddIn.value = f.addNotes || '';
+      modalDraftPhotos = (f.photos || []).map(p => ({ ...p }));
+    }
+    refreshModalTexts();
+    renderModalThumbs();
+    featModal.classList.add('open');
+    renderView();
+    setTimeout(() => featNameIn.focus(), 80);
+  }
+
+  function closeFeatureModal() {
+    featModal.classList.remove('open');
+  }
+
+  modalSaveBtn.onclick = () => {
+    if (isProcessingPhotos) return;
+    const name = featNameIn.value.trim();
+    const photoRef = featPhotoIn.value.trim();
+    const notes = modalSelectedType === 'REP' ? '' : featNotesIn.value.trim();
+    const removeNotes = modalSelectedType === 'REP' ? repRemoveIn.value.trim() : '';
+    const addNotes = modalSelectedType === 'REP' ? repAddIn.value.trim() : '';
+    const savedPhotos = modalDraftPhotos.map(p => ({ ...p }));
+
+    if (editingFeatIndex === -1) {
+      const minPts = (modalGeom === 'point') ? 1 : 3;
+      if (draftPoints.length < minPts) return;
+      features.push({
+        id: formatId(nextFeatNum++),
+        geometry: modalGeom,
+        type: modalSelectedType,
+        name,
+        photoRef,
+        photos: savedPhotos,
+        notes,
+        removeNotes,
+        addNotes,
+        points: draftPoints.map(p => ({ x: p.x, y: p.y }))
+      });
+      draftPoints = [];
+    } else {
+      const f = features[editingFeatIndex];
+      f.type = modalSelectedType;
+      f.name = name;
+      f.photoRef = photoRef;
+      f.photos = savedPhotos;
+      f.notes = notes;
+      f.removeNotes = removeNotes;
+      f.addNotes = addNotes;
+    }
+    modalDraftPhotos = [];
+    closeFeatureModal();
+    renderFeaturesList();
+    updateUI();
+    renderView();
+    scheduleAutoSave();
+  };
+
+  modalResumeBtn.onclick = () => {
+    closeFeatureModal();
+    updateUI();
+    renderView();
+  };
+
+  modalDiscardBtn.onclick = () => {
+    if (editingFeatIndex === -1) draftPoints = [];
+    modalDraftPhotos = [];
+    closeFeatureModal();
+    updateUI();
+    renderView();
+  };
+
+  // --- Hit Testing ---
+  function findHitTarget(sx, sy) {
+    const hitR = 22;
+    let best = null;
+    let bestD = hitR;
+
+    const checkList = (arr, makeTarget) => {
+      for (let i = 0; i < arr.length; i++) {
+        const sp = imageToScreen(arr[i].x, arr[i].y);
+        const d = Math.hypot(sp.x - sx, sp.y - sy);
+        if (d <= bestD) {
+          bestD = d;
+          best = makeTarget(i);
+        }
+      }
+    };
+
+    if (mode === 'boundary') {
+      checkList(points, idx => ({ kind: 'boundary', idx }));
+    } else if (mode === 'feature') {
+      if (draftPoints.length > 0 && featGeom === 'polygon') {
+        checkList(draftPoints, idx => ({ kind: 'draft', idx }));
+      } else if (editSavedVertices) {
+        for (let fi = 0; fi < features.length; fi++) {
+          if (!isFeatureVisible(features[fi])) continue;
+          checkList(features[fi].points, idx => ({ kind: 'feature', featIdx: fi, idx }));
+        }
+      }
+    }
+    return best;
+  }
+
+  // --- Pointer & Multi-Touch ---
+  function getLocalPos(e) {
+    const rect = viewCanvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  viewCanvas.addEventListener('pointerdown', e => {
+    if (!img) return;
+    viewCanvas.setPointerCapture(e.pointerId);
+    const pos = getLocalPos(e);
+    activePointers.set(e.pointerId, pos);
+
+    if (activePointers.size === 2) {
+      dragTarget = null;
+      isPanning = false;
+      const [p1, p2] = Array.from(activePointers.values());
+      pinchStartDist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      pinchStartZoom = zoom;
+      pinchStartMid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      pinchStartPan = { x: panX, y: panY };
+      return;
+    }
+
+    if (activePointers.size === 1) {
+      downPos = pos;
+      panStart = { x: panX, y: panY };
+      movedDist = 0;
+
+      if (mode === 'boundary' || mode === 'feature') {
+        const hit = findHitTarget(pos.x, pos.y);
+        if (hit) {
+          dragTarget = hit;
+          return;
+        }
+      }
+      isPanning = true;
+    }
+  });
+
+  viewCanvas.addEventListener('pointermove', e => {
+    if (!img || !activePointers.has(e.pointerId)) return;
+    const pos = getLocalPos(e);
+    activePointers.set(e.pointerId, pos);
+
+    if (activePointers.size === 2 && pinchStartMid) {
+      const [p1, p2] = Array.from(activePointers.values());
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1;
+      const mid = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      const newZoom = clamp(pinchStartZoom * (dist / pinchStartDist), 0.15, 14);
+      const ratio = newZoom / pinchStartZoom;
+      zoom = newZoom;
+      panX = mid.x - (pinchStartMid.x - pinchStartPan.x) * ratio;
+      panY = mid.y - (pinchStartMid.y - pinchStartPan.y) * ratio;
+      renderView();
+      return;
+    }
+
+    if (activePointers.size === 1 && downPos) {
+      const dx = pos.x - downPos.x;
+      const dy = pos.y - downPos.y;
+      movedDist = Math.max(movedDist, Math.hypot(dx, dy));
+
+      if (dragTarget) {
+        if (movedDist > 4) {
+          const ip = screenToImage(pos.x, pos.y);
+          const clampedPt = {
+            x: clamp(ip.x, 0, img.naturalWidth),
+            y: clamp(ip.y, 0, img.naturalHeight)
+          };
+          if (dragTarget.kind === 'boundary') {
+            points[dragTarget.idx] = clampedPt;
+          } else if (dragTarget.kind === 'draft') {
+            draftPoints[dragTarget.idx] = clampedPt;
+          } else if (dragTarget.kind === 'feature') {
+            features[dragTarget.featIdx].points[dragTarget.idx] = clampedPt;
+          }
+          renderView();
+        }
+      } else if (isPanning && movedDist > 4) {
+        panX = panStart.x + dx;
+        panY = panStart.y + dy;
+        renderView();
+      }
+    }
+  });
+
+  function endPointer(e) {
+    if (!activePointers.has(e.pointerId)) return;
+    const pos = getLocalPos(e);
+    const wasSingle = activePointers.size === 1;
+    const wasDragged = !!dragTarget && movedDist > 4;
+    const prevDrag = dragTarget;
+    activePointers.delete(e.pointerId);
+
+    if (wasSingle && downPos && movedDist <= 8) {
+      const ip = screenToImage(pos.x, pos.y);
+      const inBounds = ip.x >= 0 && ip.x <= img.naturalWidth && ip.y >= 0 && ip.y <= img.naturalHeight;
+
+      if (mode === 'georef' && inBounds) {
+        openCoordModal('gcp', ip);
+      } else if (mode === 'boundary') {
+        if (!closed && prevDrag && prevDrag.kind === 'boundary' && prevDrag.idx === 0 && points.length >= 3) {
+          closed = true;
+          scheduleAutoSave();
+        } else if (!closed && !prevDrag && inBounds) {
+          points.push(ip);
+          scheduleAutoSave();
+        }
+      } else if (mode === 'feature') {
+        if (!editSavedVertices) {
+          if (featGeom === 'point' && inBounds) {
+            draftPoints = [ip];
+            openFeatureModal(-1, 'point');
+          } else if (featGeom === 'polygon') {
+            if (prevDrag && prevDrag.kind === 'draft' && prevDrag.idx === 0 && draftPoints.length >= 3) {
+              openFeatureModal(-1, 'polygon');
+            } else if (!prevDrag && inBounds) {
+              modalGeom = 'polygon';
+              draftPoints.push(ip);
+            }
+          }
+        }
+      } else if (mode === 'scale' && inBounds) {
+        scalePoints.push(ip);
+        renderView();
+        if (scalePoints.length === 2) {
+          const pxDist = Math.hypot(scalePoints[1].x - scalePoints[0].x, scalePoints[1].y - scalePoints[0].y);
+          if (pxDist > 2) {
+            const raw = prompt(t().promptScale);
+            const meters = raw ? parseFloat(raw.replace(',', '.')) : NaN;
+            if (!isNaN(meters) && meters > 0) {
+              metersPerPixel = meters / pxDist;
+              renderFeaturesList();
+              scheduleAutoSave();
+            }
+          }
+          scalePoints = [];
+          mode = 'feature';
+        }
+      }
+    } else if (wasDragged && prevDrag && (prevDrag.kind === 'feature' || prevDrag.kind === 'boundary')) {
+      renderFeaturesList();
+      scheduleAutoSave();
+    }
+
+    if (activePointers.size === 0) {
+      dragTarget = null;
+      isPanning = false;
+      downPos = null;
+      pinchStartMid = null;
+    }
+    updateUI();
+    renderView();
+  }
+
+  viewCanvas.addEventListener('pointerup', endPointer);
+  viewCanvas.addEventListener('pointercancel', endPointer);
+
+  viewCanvas.addEventListener('wheel', e => {
+    if (!img) return;
+    e.preventDefault();
+    const pos = getLocalPos(e);
+    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, pos.x, pos.y);
+  }, { passive: false });
+
+  // --- Controls ---
+  fileIn.onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    baseImageBlob = f;
+    baseImageName = f.name || 'map.jpg';
+    if (baseImageObjectUrl) URL.revokeObjectURL(baseImageObjectUrl);
+    baseImageObjectUrl = URL.createObjectURL(f);
+    const loaded = new Image();
+    loaded.onload = () => {
+      img = loaded;
+      if (!pendingRestoredMeta) {
+        points = [];
+        closed = false;
+        features = [];
+        draftPoints = [];
+        nextFeatNum = 1;
+        scalePoints = [];
+        metersPerPixel = null;
+        gcps = [];
+        georefModel = null;
+        editSavedVertices = false;
+        featGeom = 'polygon';
+        mode = 'boundary';
+      } else {
+        pendingRestoredMeta = false;
+      }
+      settingsDrawer.classList.remove('open');
+      listDrawer.classList.remove('open');
+      resizeCanvas();
+      fitImage();
+      renderFeaturesList();
+      updateUI();
+      scheduleAutoSave(true);
+    };
+    loaded.src = baseImageObjectUrl;
+    fileIn.value = '';
+  };
+
+  function setMode(newMode) {
+    if (mode === 'scale') scalePoints = [];
+    if (newMode !== 'feature') editSavedVertices = false;
+    mode = newMode;
+    if (newMode === 'scale' || newMode === 'georef') {
+      settingsDrawer.classList.remove('open');
+      listDrawer.classList.remove('open');
+    }
+    updateUI();
+    renderView();
+  }
+
+  modeBoundaryBtn.onclick = () => setMode('boundary');
+  modeFeatureBtn.onclick  = () => setMode('feature');
+  modePanBtn.onclick      = () => setMode('pan');
+  modeScaleBtn.onclick    = () => setMode('scale');
+  modeGeorefBtn.onclick   = () => setMode('georef');
+  cancelScaleBtn.onclick  = () => setMode('feature');
+  doneGeorefBtn.onclick   = () => setMode(closed ? 'feature' : 'boundary');
+
+  undoGcpBtn.onclick = () => {
+    if (gcps.length > 0) {
+      gcps.pop();
+      recomputeGeorefModel();
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+    }
+  };
+  clearGcpBtn.onclick = () => {
+    if (gcps.length > 0 && confirm(t().confirmClearGcp)) {
+      gcps = [];
+      georefModel = null;
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+    }
+  };
+
+  geomPolyBtn.onclick = () => {
+    editSavedVertices = false;
+    featGeom = 'polygon';
+    modalGeom = 'polygon';
+    updateUI();
+    renderView();
+  };
+
+  geomPinBtn.onclick = () => {
+    if (draftPoints.length > 0 && featGeom === 'polygon') {
+      if (!confirm(t().confirmSwitchPin)) return;
+      draftPoints = [];
+    }
+    editSavedVertices = false;
+    featGeom = 'point';
+    modalGeom = 'point';
+    updateUI();
+    renderView();
+  };
+
+  toggleEditSavedBtn.onclick = () => {
+    if (draftPoints.length > 0) return;
+    editSavedVertices = !editSavedVertices;
+    updateUI();
+    renderView();
+  };
+
+  toggleSettingsBtn.onclick = () => {
+    listDrawer.classList.remove('open');
+    settingsDrawer.classList.toggle('open');
+  };
+  toggleListBtn.onclick = () => {
+    settingsDrawer.classList.remove('open');
+    listDrawer.classList.toggle('open');
+    renderFeaturesList();
+  };
+
+  closePolyBtn.onclick = () => {
+    if (points.length >= 3) {
+      closed = true;
+      renderFeaturesList();
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+    }
+  };
+  undoBoundaryBtn.onclick = () => {
+    if (closed) closed = false;
+    else if (points.length > 0) points.pop();
+    updateUI();
+    renderView();
+    scheduleAutoSave();
+  };
+  clearBoundaryBtn.onclick = () => {
+    if (points.length > 0 && confirm(t().confirmClearB)) {
+      points = [];
+      closed = false;
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+    }
+  };
+
+  finishFeatBtn.onclick = () => {
+    if (draftPoints.length >= 3) openFeatureModal(-1, 'polygon');
+  };
+  undoFeatBtn.onclick = () => {
+    if (draftPoints.length > 0) draftPoints.pop();
+    updateUI();
+    renderView();
+  };
+  cancelFeatBtn.onclick = () => {
+    draftPoints = [];
+    updateUI();
+    renderView();
+  };
+
+  [colsIn, rowsIn, alignIn, dimIn, subIn, showGridIn, filtRemIn, filtRepIn, filtModIn, filtAddIn, filtPinIn, showGcpIn].forEach(el => {
+    el.addEventListener('input', () => {
+      renderFeaturesList();
+      updateUI();
+      renderView();
+      scheduleAutoSave();
+    });
+  });
+
+  zoomInBtn.onclick = () => {
+    const r = stage.getBoundingClientRect();
+    zoomAt(1.3, r.width / 2, r.height / 2);
+  };
+  zoomOutBtn.onclick = () => {
+    const r = stage.getBoundingClientRect();
+    zoomAt(1 / 1.3, r.width / 2, r.height / 2);
+  };
+  fitBtn.onclick = fitImage;
+
+  // --- Map Canvas Builders ---
+  function renderFullMapCanvas() {
+    const fullCv = document.createElement('canvas');
+    fullCv.width = img.naturalWidth;
+    fullCv.height = img.naturalHeight;
+    drawSceneOnContext(fullCv.getContext('2d'), true);
+    return fullCv;
+  }
+
+  function renderCroppedMapCanvas(fullCv) {
+    if (!closed || points.length < 3) return null;
+    const W = img.naturalWidth, H = img.naturalHeight;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of points) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.05);
+    const sx = Math.max(0, Math.floor(minX - pad));
+    const sy = Math.max(0, Math.floor(minY - pad));
+    const ex = Math.min(W, Math.ceil(maxX + pad));
+    const ey = Math.min(H, Math.ceil(maxY + pad));
+    const cw = Math.max(1, ex - sx);
+    const ch = Math.max(1, ey - sy);
+
+    const cropCv = document.createElement('canvas');
+    cropCv.width = cw;
+    cropCv.height = ch;
+    cropCv.getContext('2d').drawImage(fullCv, sx, sy, cw, ch, 0, 0, cw, ch);
+    return cropCv;
+  }
+
+  function exportImage(cropOnly) {
+    if (!img) return;
+    if (cropOnly && (!closed || points.length < 3)) return;
+    const fullCv = renderFullMapCanvas();
+    const outCanvas = cropOnly ? renderCroppedMapCanvas(fullCv) : fullCv;
+    if (!outCanvas) return;
+    outCanvas.toBlob(blob => {
+      if (!blob) return;
+      triggerDownloadBlob(blob, cropOnly ? 'village_marked_crop.png' : 'village_marked_full.png');
+    }, 'image/png');
+  }
+
+  saveCropBtn.onclick = () => exportImage(true);
+  saveFullBtn.onclick = () => exportImage(false);
+
+  // --- AI Visual Reference Sheet PNG Generator ---
+  function wrapLines(ctx, text, maxW, maxLines) {
+    if (!text) return [];
+    const words = String(text).split(/\s+/);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const test = cur ? (cur + ' ' + w) : w;
+      if (ctx.measureText(test).width <= maxW) {
+        cur = test;
+      } else {
+        if (cur) lines.push(cur);
+        cur = w;
+        if (lines.length >= maxLines) break;
+      }
+    }
+    if (cur && lines.length < maxLines) lines.push(cur);
+    return lines.slice(0, maxLines);
+  }
+
+  function drawImageContain(ctx, im, x, y, w, h) {
+    const scale = Math.min(w / im.naturalWidth, h / im.naturalHeight);
+    const dw = im.naturalWidth * scale;
+    const dh = im.naturalHeight * scale;
+    ctx.drawImage(im, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+
+  async function generateReferenceSheetCanvas() {
+    if (!img || features.length === 0) return null;
+    const L = t();
+    const ordered = [...features].sort((a, b) => (TYPE_STYLES[a.type]?.order || 4) - (TYPE_STYLES[b.type]?.order || 4));
+
+    const loadedPhotoLists = await Promise.all(ordered.map(async f => {
+      const list = (f.photos || []).slice(0, 3);
+      return Promise.all(list.map(async (ph, idx) => ({
+        im: await loadImageFromUrl(ph.dataUrl),
+        exportName: buildPhotoExportPath(f.id, idx, ph.origName),
+        bearing: ph.bearing || ''
+      })));
+    }));
+
+    const sheetW = 1400;
+    const pad = 22;
+    const headerH = 92;
+    const cardH = 340;
+    const cardGap = 18;
+    const sheetH = headerH + pad + ordered.length * (cardH + cardGap) + pad;
+
+    const cv = document.createElement('canvas');
+    cv.width = sheetW;
+    cv.height = sheetH;
+    const ctx = cv.getContext('2d');
+
+    ctx.fillStyle = '#070d1a';
+    ctx.fillRect(0, 0, sheetW, sheetH);
+
+    ctx.fillStyle = '#0f1b33';
+    ctx.fillRect(0, 0, sheetW, headerH);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, headerH); ctx.lineTo(sheetW, headerH); ctx.stroke();
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 24px monospace, Tahoma, Arial';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(L.refSheetTitle, pad, 18);
+
+    const scaleTxt = metersPerPixel ? `${(1 / metersPerPixel).toFixed(2)} px/m` : 'Uncalibrated';
+    const georefTxt = georefModel ? `Georef: ${gcps.length} GCPs` : 'No Georef';
+    const counts = { REM: 0, REP: 0, MOD: 0, ADD: 0 };
+    ordered.forEach(f => { if (counts[f.type] !== undefined) counts[f.type]++; });
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '14px monospace, Tahoma, Arial';
+    ctx.fillText(
+      `Base Map: ${img.naturalWidth}x${img.naturalHeight}px | ${scaleTxt} | ${georefTxt} | Total: ${ordered.length} (REM:${counts.REM}, REP:${counts.REP}, MOD:${counts.MOD}, ADD:${counts.ADD})`,
+      pad, 56
+    );
+
+    const W = img.naturalWidth, H = img.naturalHeight;
+
+    ordered.forEach((f, idx) => {
+      const y0 = headerH + pad + idx * (cardH + cardGap);
+      const st = TYPE_STYLES[f.type] || TYPE_STYLES.ADD;
+      const isPin = (f.geometry === 'point' || f.points.length === 1);
+      const cardW = sheetW - pad * 2;
+
+      ctx.fillStyle = '#101a2e';
+      ctx.fillRect(pad, y0, cardW, cardH);
+      ctx.strokeStyle = st.stroke;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(pad, y0, cardW, cardH);
+
+      const chH = 40;
+      ctx.fillStyle = '#162440';
+      ctx.fillRect(pad, y0, cardW, chH);
+      ctx.fillStyle = st.stroke;
+      ctx.fillRect(pad, y0, 10, chH);
+
+      const sectors = detectFeatureSectors(f.points);
+      const secStr = sectors.length ? `Sector: ${sectors.join(',')}` : 'Sector: N/A';
+      const geomStr = isPin ? 'PIN' : 'POLYGON';
+      let dimStr = '';
+      if (!isPin && metersPerPixel) {
+        const m = polyAreaCentroidXY(f.points);
+        dimStr = ` | ${(m.areaPx * metersPerPixel * metersPerPixel).toFixed(1)} m²`;
+      }
+      ctx.fillStyle = st.badge;
+      ctx.font = 'bold 17px monospace, Tahoma, Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        `${f.id}  [${f.type} / ${geomStr}]  ${f.name || '(Unnamed)'}   —   ${secStr}${dimStr}`,
+        pad + 20, y0 + chH / 2
+      );
+
+      // Left box: Map Context Crop
+      const mapX = pad + 14;
+      const mapY = y0 + chH + 26;
+      const mapW = 330;
+      const mapH = 200;
+
+      ctx.fillStyle = '#7dd3fc';
+      ctx.font = 'bold 12px monospace, Tahoma, Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(L.refSheetMapCtx, mapX, mapY - 4);
+
+      ctx.fillStyle = '#050a14';
+      ctx.fillRect(mapX, mapY, mapW, mapH);
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const p of f.points) {
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
+      const span = isPin ? Math.max(120, Math.min(W, H) * 0.16) : Math.max(maxX - minX, maxY - minY) * 2.4;
+      const halfW = Math.max(80, span * 0.6);
+      const halfH = halfW * (mapH / mapW);
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      let sx = cx - halfW, sy = cy - halfH, sw = halfW * 2, sh = halfH * 2;
+      if (sw > W) { sw = W; sh = sw * (mapH / mapW); }
+      if (sh > H) { sh = H; sw = sh * (mapW / mapH); }
+      sx = clamp(sx, 0, Math.max(0, W - sw));
+      sy = clamp(sy, 0, Math.max(0, H - sh));
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(mapX, mapY, mapW, mapH);
+      ctx.clip();
+      ctx.drawImage(img, sx, sy, sw, sh, mapX, mapY, mapW, mapH);
+
+      const toBox = p => ({
+        x: mapX + ((p.x - sx) / sw) * mapW,
+        y: mapY + ((p.y - sy) / sh) * mapH
+      });
+      if (isPin) {
+        const bp = toBox(f.points[0]);
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = st.stroke;
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        const b0 = toBox(f.points[0]);
+        ctx.moveTo(b0.x, b0.y);
+        for (let k = 1; k < f.points.length; k++) {
+          const bk = toBox(f.points[k]);
+          ctx.lineTo(bk.x, bk.y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = st.fill;
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4.5;
+        ctx.stroke();
+        ctx.strokeStyle = st.stroke;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(mapX, mapY, mapW, mapH);
+
+      // Right area: Attached Field Photos + Camera Bearing
+      const phX = mapX + mapW + 20;
+      const phW = cardW - (mapW + 48);
+      const phY = mapY;
+      const phH = mapH;
+
+      ctx.fillStyle = '#d8b4fe';
+      ctx.font = 'bold 12px monospace, Tahoma, Arial';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      const extraCnt = Math.max(0, (f.photos ? f.photos.length : 0) - 3);
+      const extraTag = extraCnt > 0 ? ` (+${extraCnt} in ZIP/photos/)` : '';
+      ctx.fillText(`${L.refSheetFieldPhotos}${extraTag}`, phX, phY - 4);
+
+      const loaded = (loadedPhotoLists[idx] || []).filter(item => item.im);
+      if (loaded.length === 0) {
+        ctx.fillStyle = '#080f1d';
+        ctx.fillRect(phX, phY, phW, phH);
+        ctx.strokeStyle = '#1e3354';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(phX, phY, phW, phH);
+        ctx.fillStyle = '#64748b';
+        ctx.font = '14px monospace, Tahoma, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(f.photoRef ? `Ref: ${f.photoRef}` : L.refSheetNoPhoto, phX + phW / 2, phY + phH / 2);
+      } else {
+        const slotGap = 12;
+        const slotW = (phW - slotGap * (loaded.length - 1)) / loaded.length;
+        loaded.forEach((item, pi) => {
+          const bx = phX + pi * (slotW + slotGap);
+          ctx.fillStyle = '#050a14';
+          ctx.fillRect(bx, phY, slotW, phH);
+          drawImageContain(ctx, item.im, bx + 4, phY + 4, slotW - 8, phH - 28);
+          ctx.strokeStyle = '#334155';
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(bx, phY, slotW, phH);
+
+          ctx.fillStyle = 'rgba(8, 15, 29, 0.92)';
+          ctx.fillRect(bx, phY + phH - 22, slotW, 22);
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '11px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const dirTag = item.bearing ? ` | Cam->${item.bearing}` : '';
+          ctx.fillText(`${item.exportName}${dirTag}`, bx + slotW / 2, phY + phH - 11, slotW - 8);
+        });
+      }
+
+      // Bottom Instructions Strip
+      const noteY = mapY + mapH + 10;
+      const noteH = cardH - (noteY - y0) - 10;
+      ctx.fillStyle = '#080f1d';
+      ctx.fillRect(mapX, noteY, cardW - 28, noteH);
+      ctx.strokeStyle = '#1e3354';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(mapX, noteY, cardW - 28, noteH);
+
+      let noteLine = '';
+      if (f.type === 'REP') {
+        noteLine = `[STEP 1 REMOVE]: ${f.removeNotes || '-'}   ||   [STEP 2 ADD]: ${f.addNotes || '-'}`;
+      } else {
+        noteLine = `[${f.type} INSTRUCTIONS]: ${f.notes || '-'}`;
+      }
+      const ctr = polyAreaCentroidXY(f.points);
+      const ll = imageXYToLatLon(ctr.cx, ctr.cy);
+      const gpsTxt = ll ? ` | GPS: ${ll.lat.toFixed(6)}, ${ll.lon.toFixed(6)}` : '';
+      const bboxTxt = isPin
+        ? `Px: (${Math.round(f.points[0].x)},${Math.round(f.points[0].y)})${gpsTxt}`
+        : `BBox px: (${Math.round(minX)},${Math.round(minY)})-(${Math.round(maxX)},${Math.round(maxY)})${gpsTxt}`;
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '13px Tahoma, Arial, monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const wrapped = wrapLines(ctx, `${noteLine}  |  ${bboxTxt}`, cardW - 48, 2);
+      wrapped.forEach((ln, li) => {
+        ctx.fillText(ln, mapX + 10, noteY + 8 + li * 20, cardW - 48);
+      });
+    });
+
+    return cv;
+  }
+
+  // --- Structured JSON Payload & AI Prompt Brief (v6: includes GCPs, Lat/Lon, Camera Bearings) ---
+  function buildProjectPayload(includeBase64Photos) {
+    const round2 = v => Math.round(v * 100) / 100;
+
+    const mapPointObj = p => {
+      const obj = { x: round2(p.x), y: round2(p.y) };
+      const ll = imageXYToLatLon(p.x, p.y);
+      if (ll) { obj.lat = ll.lat; obj.lon = ll.lon; }
+      return obj;
+    };
+
+    const exportedFeatures = features.map(f => {
+      const isPin = (f.geometry === 'point' || f.points.length === 1);
+      const photoEntries = (f.photos || []).map((ph, pi) => {
+        const pObj = {
+          file: buildPhotoExportPath(f.id, pi, ph.origName),
+          origName: ph.origName,
+          cameraBearing: ph.bearing || '',
+          width: ph.width,
+          height: ph.height
+        };
+        if (includeBase64Photos) pObj.dataUrl = ph.dataUrl;
+        return pObj;
+      });
+
+      const entry = {
+        id: f.id,
+        geometry: isPin ? 'point' : 'polygon',
+        type: f.type,
+        executionOrder: TYPE_STYLES[f.type]?.order || 4,
+        name: f.name,
+        photoRef: f.photoRef || '',
+        photos: photoEntries,
+        sectors: detectFeatureSectors(f.points),
+        points: f.points.map(mapPointObj)
+      };
+      if (f.type === 'REP') {
+        entry.removeNotes = f.removeNotes || '';
+        entry.addNotes = f.addNotes || '';
+      } else {
+        entry.notes = f.notes || '';
+      }
+      if (!isPin && metersPerPixel) {
+        const m = polyAreaCentroidXY(f.points);
+        entry.areaM2 = round2(m.areaPx * metersPerPixel * metersPerPixel);
+        entry.perimeterM = round2(m.perimeterPx * metersPerPixel);
+      }
+      return entry;
+    });
+
+    const executionPlan = {
+      pass1_removals: exportedFeatures
+        .filter(f => f.type === 'REM' || f.type === 'REP')
+        .map(f => ({
+          id: f.id,
+          geometry: f.geometry,
+          sourceType: f.type,
+          name: f.name,
+          photos: f.photos.map(p => ({ file: p.file, cameraBearing: p.cameraBearing })),
+          action: f.type === 'REP' ? f.removeNotes : f.notes
+        })),
+      pass2_modifications: exportedFeatures
+        .filter(f => f.type === 'MOD')
+        .map(f => ({
+          id: f.id,
+          geometry: f.geometry,
+          name: f.name,
+          photos: f.photos.map(p => ({ file: p.file, cameraBearing: p.cameraBearing })),
+          action: f.notes
+        })),
+      pass3_additions: exportedFeatures
+        .filter(f => f.type === 'ADD' || f.type === 'REP')
+        .map(f => ({
+          id: f.id,
+          geometry: f.geometry,
+          sourceType: f.type,
+          name: f.name,
+          photos: f.photos.map(p => ({ file: p.file, cameraBearing: p.cameraBearing })),
+          action: f.type === 'REP' ? f.addNotes : f.notes
+        }))
+    };
+
+    return {
+      version: 6,
+      language: lang,
+      aiAgentGuide: {
+        purpose: 'Update a base top-down satellite map by simulating & compositing field-verified changes without distorting untouched areas.',
+        strictExecutionOrder: ['pass1_removals', 'pass2_modifications', 'pass3_additions'],
+        photoUsage: 'Each feature.photos[] entry links ground/oblique field photos (with optional cameraBearing showing which compass direction the camera faced) to that exact feature ID so an AI agent can simulate an accurate 90-degree orthographic top-down view.'
+      },
+      imageWidth: img.naturalWidth,
+      imageHeight: img.naturalHeight,
+      metersPerPixel: metersPerPixel ? Number(metersPerPixel.toFixed(6)) : null,
+      georeferencing: {
+        active: !!georefModel,
+        mode: georefModel ? georefModel.mode : null,
+        rmsPx: georefModel ? round2(georefModel.rmsPx) : null,
+        gcps: gcps.map(g => ({ x: round2(g.x), y: round2(g.y), lat: g.lat, lon: g.lon, label: g.label || '' }))
+      },
+      grid: {
+        cols: parseInt(colsIn.value, 10) || 6,
+        rows: parseInt(rowsIn.value, 10) || 4,
+        aligned: alignIn.checked
+      },
+      boundaryClosed: closed,
+      points: points.map(mapPointObj),
+      executionPlan,
+      features: exportedFeatures
+    };
+  }
+
+  function buildAiPromptBrief(payload) {
+    const lines = [];
+    lines.push('===============================================================');
+    lines.push('AI AGENT SATELLITE MAP UPDATE BRIEF (VILLAGE SURVEY v6)');
+    lines.push('===============================================================');
+    lines.push(`Base Map Dimensions : ${payload.imageWidth} x ${payload.imageHeight} px`);
+    lines.push(`Scale Calibration   : ${payload.metersPerPixel ? (1 / payload.metersPerPixel).toFixed(2) + ' px/m' : 'Uncalibrated'}`);
+    lines.push(`Georeferencing      : ${payload.georeferencing.active ? payload.georeferencing.gcps.length + ' GCPs (' + payload.georeferencing.mode + ', RMS ' + payload.georeferencing.rmsPx + 'px)' : 'None'}`);
+    lines.push(`Total Marked Items  : ${payload.features.length}`);
+    lines.push('');
+    lines.push('MANDATORY RULES FOR AI AGENT:');
+    lines.push('1. Execute edits in strict 3-pass order: Pass 1 (REM/REP-remove) -> Pass 2 (MOD) -> Pass 3 (ADD/REP-add).');
+    lines.push('2. Use each feature\'s linked photo(s) in photos/ and ai_reference_sheet.png (respecting cameraBearing if present) ONLY to inspect real colors, materials, height, and layout, then simulate a 90-degree orthographic top-down view.');
+    lines.push('3. Match base map shadow direction, tone/contrast, and image grain. Do NOT alter areas outside marked polygons/pins.');
+    lines.push('');
+
+    const fmtPhotos = arr => arr.map(p => p.cameraBearing ? `${p.file} [Cam->${p.cameraBearing}]` : p.file).join(', ');
+
+    const dumpPass = (title, items) => {
+      lines.push('---------------------------------------------------------------');
+      lines.push(title);
+      lines.push('---------------------------------------------------------------');
+      if (!items.length) { lines.push('(None)'); lines.push(''); return; }
+      items.forEach(item => {
+        const tag = item.sourceType ? `${item.sourceType} | ${item.geometry}` : `MOD | ${item.geometry}`;
+        lines.push(`- ${item.id} [${tag}] ${item.name || '(Unnamed)'}`);
+        lines.push(`  Action : ${item.action || '-'}`);
+        if (item.photos.length) lines.push(`  Photos : ${fmtPhotos(item.photos)}`);
+      });
+      lines.push('');
+    };
+
+    dumpPass('PASS 1 — REMOVALS (Clean Plate First)', payload.executionPlan.pass1_removals);
+    dumpPass('PASS 2 — MODIFICATIONS', payload.executionPlan.pass2_modifications);
+    dumpPass('PASS 3 — ADDITIONS (Simulate 90-deg Top-Down & Blend)', payload.executionPlan.pass3_additions);
+
+    lines.push('---------------------------------------------------------------');
+    lines.push('COORDINATE & PHOTO INDEX (Exact Image Pixels & GPS)');
+    lines.push('---------------------------------------------------------------');
+    payload.features.forEach(f => {
+      const ptsStr = f.points.map(p => p.lat !== undefined ? `(${p.x},${p.y} @ ${p.lat},${p.lon})` : `(${p.x},${p.y})`).join(' ');
+      const phStr = f.photos.length ? fmtPhotos(f.photos) : (f.photoRef || 'None');
+      lines.push(`${f.id} | ${f.type} | ${f.geometry} | Sectors: ${f.sectors.join(',') || 'N/A'} | Name: ${f.name || '-'}`);
+      lines.push(`  Photos : ${phStr}`);
+      lines.push(`  Points : ${ptsStr}`);
+    });
+    return lines.join('\n');
+  }
+
+  // --- Export Handlers ---
+  exportRefSheetBtn.onclick = async () => {
+    if (!img || features.length === 0) {
+      alert(t().alertNoFeaturesSheet);
+      return;
+    }
+    exportRefSheetBtn.disabled = true;
+    try {
+      const sheetCv = await generateReferenceSheetCanvas();
+      if (sheetCv) {
+        sheetCv.toBlob(blob => {
+          if (blob) triggerDownloadBlob(blob, 'village_ai_reference_sheet.png');
+        }, 'image/png');
+      }
+    } finally {
+      updateUI();
+    }
+  };
+
+  exportZipBtn.onclick = async () => {
+    if (!img) return;
+    const L = t();
+    exportZipBtn.disabled = true;
+    exportZipBtn.textContent = L.exportZipBusy;
+    try {
+      const entries = [];
+      const payload = buildProjectPayload(false);
+      entries.push({ name: 'project_ai.json', data: JSON.stringify(payload, null, 2) });
+      entries.push({ name: 'AI_PROMPT_BRIEF.txt', data: buildAiPromptBrief(payload) });
+
+      const fullCv = renderFullMapCanvas();
+      const fullBytes = await canvasToPngUint8Array(fullCv);
+      if (fullBytes) entries.push({ name: 'marked_map_full.png', data: fullBytes });
+
+      if (closed && points.length >= 3) {
+        const cropCv = renderCroppedMapCanvas(fullCv);
+        const cropBytes = cropCv ? await canvasToPngUint8Array(cropCv) : null;
+        if (cropBytes) entries.push({ name: 'marked_map_crop.png', data: cropBytes });
+      }
+
+      if (features.length > 0) {
+        const sheetCv = await generateReferenceSheetCanvas();
+        const sheetBytes = sheetCv ? await canvasToPngUint8Array(sheetCv) : null;
+        if (sheetBytes) entries.push({ name: 'ai_reference_sheet.png', data: sheetBytes });
+      }
+
+      for (const f of features) {
+        if (!f.photos || !f.photos.length) continue;
+        f.photos.forEach((ph, pi) => {
+          entries.push({ name: buildPhotoExportPath(f.id, pi, ph.origName), data: dataUrlToUint8Array(ph.dataUrl) });
+        });
+      }
+
+      const zipBlob = buildZipBlob(entries);
+      triggerDownloadBlob(zipBlob, 'village_ai_package_v6.zip');
+    } finally {
+      exportZipBtn.textContent = t().exportZip;
+      updateUI();
+    }
+  };
+
+  exportJsonBtn.onclick = () => {
+    if (!img) return;
+    const includePhotos = embedJsonPhotosIn.checked;
+    const payload = buildProjectPayload(includePhotos);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    triggerDownloadBlob(blob, includePhotos ? 'village_ai_bundle_v6.json' : 'village_survey_v6_light.json');
+  };
+
+  // --- Import Project JSON (supports v1–v6, restoring GCPs & photo bearings) ---
+  importJsonIn.onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (Array.isArray(data.points) && data.points.length >= 3) {
+          points = data.points.map(p => ({ x: Number(p.x), y: Number(p.y) }));
+          closed = (typeof data.boundaryClosed === 'boolean') ? data.boundaryClosed : true;
+        }
+        const gCols = (data.grid && data.grid.cols) || data.cols;
+        const gRows = (data.grid && data.grid.rows) || data.rows;
+        const gAligned = (data.grid && typeof data.grid.aligned === 'boolean') ? data.grid.aligned : data.aligned;
+        if (gCols) colsIn.value = clamp(parseInt(gCols, 10), 2, 20);
+        if (gRows) rowsIn.value = clamp(parseInt(gRows, 10), 2, 20);
+        if (typeof gAligned === 'boolean') alignIn.checked = gAligned;
+
+        if (data.georeferencing && Array.isArray(data.georeferencing.gcps)) {
+          gcps = data.georeferencing.gcps
+            .filter(g => !isNaN(Number(g.x)) && !isNaN(Number(g.y)) && !isNaN(Number(g.lat)) && !isNaN(Number(g.lon)))
+            .map(g => ({ x: Number(g.x), y: Number(g.y), lat: Number(g.lat), lon: Number(g.lon), label: g.label || '' }));
+          recomputeGeorefModel();
+        }
+        if (typeof data.metersPerPixel === 'number' && data.metersPerPixel > 0) {
+          metersPerPixel = data.metersPerPixel;
+        }
+        if (Array.isArray(data.features)) {
+          features = data.features
+            .filter(item => {
+              if (!Array.isArray(item.points)) return false;
+              const isPin = (item.geometry === 'point' || item.points.length === 1);
+              return isPin ? item.points.length >= 1 : item.points.length >= 3;
+            })
+            .map((item, idx) => {
+              const isPin = (item.geometry === 'point' || item.points.length === 1);
+              const restoredPhotos = Array.isArray(item.photos)
+                ? item.photos
+                    .filter(ph => ph && typeof ph.dataUrl === 'string' && ph.dataUrl.startsWith('data:image/'))
+                    .map(ph => {
+                      const approxBytes = Math.round((ph.dataUrl.length - ph.dataUrl.indexOf(',') - 1) * 0.75);
+                      return {
+                        origName: ph.origName || ph.file || 'photo.jpg',
+                        dataUrl: ph.dataUrl,
+                        width: Number(ph.width) || 0,
+                        height: Number(ph.height) || 0,
+                        sizeKB: Math.max(1, Math.round(approxBytes / 1024)),
+                        bearing: ph.cameraBearing || ph.bearing || ''
+                      };
+                    })
+                : [];
+              return {
+                id: item.id || formatId(idx + 1),
+                geometry: isPin ? 'point' : 'polygon',
+                type: TYPE_STYLES[item.type] ? item.type : 'ADD',
+                name: item.name || '',
+                photoRef: item.photoRef || '',
+                photos: restoredPhotos,
+                notes: item.notes || '',
+                removeNotes: item.removeNotes || '',
+                addNotes: item.addNotes || '',
+                points: (isPin ? item.points.slice(0, 1) : item.points).map(p => ({ x: Number(p.x), y: Number(p.y) }))
+              };
+            });
+          let maxN = features.length;
+          for (const item of features) {
+            const m = /^ID-(\d+)$/.exec(item.id);
+            if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+          }
+          nextFeatNum = maxN + 1;
+        }
+        draftPoints = [];
+        editSavedVertices = false;
+        renderFeaturesList();
+        updateUI();
+        renderView();
+        scheduleAutoSave(true);
+      } catch {
+        alert(t().alertBadJson);
+      }
+      importJsonIn.value = '';
+    };
+    reader.readAsText(f);
+  };
+
+  resizeCanvas();
+  applyLanguage();
+  restoreAutoSaveOnBoot();
+})();
+</script>
+</body>
+</html>
